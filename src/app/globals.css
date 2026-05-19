@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+@theme {
+  --color-cosmic-midnight: var(--color-cosmic-midnight);
+  --color-titanium-slate: var(--color-titanium-slate);
+  --color-polar-white: var(--color-polar-white);
+  --color-muted-gray: var(--color-muted-gray);
+  
+  --color-electric-cyan: var(--color-electric-cyan);
+  --color-neon-amber: var(--color-neon-amber);
+  --color-cashflow-emerald: var(--color-cashflow-emerald);
+  --color-alert-coral: var(--color-alert-coral);
+
+  --font-inter: var(--font-inter), sans-serif;
+  --font-plus-jakarta: var(--font-plus-jakarta-sans), sans-serif;
+  --font-space-grotesk: var(--font-space-grotesk), monospace;
+}
+
+:root {
+  /* Modo Oscuro (Premium SaaS Minimalist) */
+  --color-cosmic-midnight: #020617; /* Slate 950 - Fondo ultraclara oscuro con toque azul */
+  --color-titanium-slate: #0F172A; /* Slate 900 - Base para paneles */
+  --color-polar-white: #F8FAFC; /* Slate 50 - Texto súper blanco y limpio */
+  --color-muted-gray: #64748B; /* Slate 500 - Texto secundario sutil pero legible */
+  
+  /* Acentos vibrantes y elegantes */
+  --color-electric-cyan: #0EA5E9; /* Sky 500 - Azul brillante, moderno y SaaS */
+  --color-neon-amber: #F59E0B; /* Amber 500 - Alertas/pendientes */
+  --color-cashflow-emerald: #10B981; /* Emerald 500 - Ingresos/Éxito */
+  --color-alert-coral: #EF4444; /* Red 500 - Errores/Falta de stock */
+  
+  --glass-bg: rgba(15, 23, 42, 0.4); /* Fondo translúcido del panel oscuro */
+  --glass-border: rgba(255, 255, 255, 0.08); /* Borde súper sutil */
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); /* Sombra profunda para levantar el panel */
+  
+  background-color: var(--color-cosmic-midnight);
+  color: var(--color-polar-white);
+}
+
+.light {
+  /* Modo Claro (Premium Clean SaaS) */
+  --color-cosmic-midnight: #F8FAFC; /* Slate 50 - Fondo blanquecino lujoso */
+  --color-titanium-slate: #FFFFFF; /* Paneles en blanco puro */
+  --color-polar-white: #0F172A; /* Slate 900 - Texto oscuro súper elegante */
+  --color-muted-gray: #475569; /* Slate 600 - Texto secundario perfecto */
+  
+  /* Acentos adaptados para excelente contraste (WCAG AA+) */
+  --color-electric-cyan: #0284C7; /* Sky 600 - Azul profundo para legibilidad sobre claro */
+  --color-neon-amber: #D97706; /* Amber 600 */
+  --color-cashflow-emerald: #059669; /* Emerald 600 */
+  --color-alert-coral: #DC2626; /* Red 600 */
+  
+  --glass-bg: rgba(255, 255, 255, 0.7); /* Fondo translúcido blanco */
+  --glass-border: rgba(15, 23, 42, 0.05); /* Borde de contraste mínimo oscuro */
+  --glass-shadow: 0 8px 32px 0 rgba(15, 23, 42, 0.05); /* Sombra muy sutil */
+  
+  background-color: var(--color-cosmic-midnight);
+  color: var(--color-polar-white);
+}
+
+body {
+  font-family: var(--font-inter);
+  background-color: var(--color-cosmic-midnight);
+  color: var(--color-polar-white);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Un sutil mesh gradient en el fondo para evitar que se vea totalmente plano, pero que sigue la elegancia SaaS */
+  background-image: radial-gradient(circle at 50% -20%, rgba(14, 165, 233, 0.05) 0%, transparent 60%);
+  background-attachment: fixed;
+}
+
+.light body {
+  background-image: radial-gradient(circle at 50% -20%, rgba(2, 132, 199, 0.03) 0%, transparent 60%);
+}
+
+/* Premium SaaS Glassmorphism Panel */
+@utility glass-panel {
+  background-color: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@utility text-glow-cyan {
+  text-shadow: 0 0 16px rgba(14, 165, 233, 0.4);
+}
+
+@utility box-glow-cyan {
+  box-shadow: 0 0 24px rgba(14, 165, 233, 0.15);
+}

@@ -1,0 +1,53 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Función de seguridad base (App Monousuario)
+    function isOwner() {
+      return request.auth != null;
+    }
+
+    // 📦 REGLAS PARA PRODUCTOS
+    match /productos/{productoId} {
+      allow read, delete: if isOwner();
+      
+      allow create, update: if isOwner()
+        && request.resource.data.keys().hasAll(['sku', 'nombre', 'marca', 'categoria', 'costoCompra', 'precioVenta', 'stockActual', 'stockMinimo'])
+        && request.resource.data.sku is string
+        && request.resource.data.nombre is string
+        && request.resource.data.marca is string
+        && request.resource.data.categoria in ['Teléfonos', 'Protectores', 'Cargadores', 'Auriculares', 'Otros']
+        && request.resource.data.costoCompra is number
+        && request.resource.data.precioVenta is number
+        && request.resource.data.stockActual is number
+        && request.resource.data.stockMinimo is number;
+    }
+
+    // 🛒 REGLAS PARA VENTAS
+    match /ventas/{ventaId} {
+      allow read, delete: if isOwner();
+      
+      allow create, update: if isOwner()
+        && request.resource.data.keys().hasAll(['productoId', 'nombreProducto', 'cantidadVendida', 'precioVentaFinal', 'metodoPago', 'gananciaNeta', 'fecha'])
+        && request.resource.data.productoId is string
+        && request.resource.data.nombreProducto is string
+        && request.resource.data.cantidadVendida is number
+        && request.resource.data.precioVentaFinal is number
+        && request.resource.data.metodoPago in ['Efectivo', 'Pago Móvil', 'Transferencia', 'Tarjeta', 'Punto', 'Zelle']
+        && request.resource.data.gananciaNeta is number
+        && request.resource.data.fecha is string;
+    }
+
+    // 📉 REGLAS PARA GASTOS
+    match /gastos/{gastoId} {
+      allow read, delete: if isOwner();
+      
+      allow create, update: if isOwner()
+        && request.resource.data.keys().hasAll(['descripcion', 'monto', 'categoria', 'fecha'])
+        && request.resource.data.descripcion is string
+        && request.resource.data.monto is number
+        && request.resource.data.categoria in ['Alquiler', 'Sueldos', 'Servicios', 'Publicidad', 'Reparaciones', 'Envíos', 'Suministros', 'Otros']
+        && request.resource.data.fecha is string;
+    }
+  }
+}
