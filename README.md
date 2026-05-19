@@ -34,38 +34,6 @@ El sistema consolida la gestión de inventario, el registro atómico de ventas y
 *   **Backend as a Service (BaaS)**: Firebase (Authentication & Firestore).
 *   **Arquitectura y Patrones**: Context API (`TiendaContext`) para sincronización de estado, Error Boundaries granulares (`error.tsx`, `global-error.tsx`).
 
-## 🚀 Instalación y Despliegue Local
-
-Sigue estos pasos para desplegar el proyecto en tu entorno local:
-
-1. **Clonar el repositorio**
-   ```bash
-   git clone git@github.com:Juan17md/plugzone-digital.git
-   cd plugzone-digital
-   ```
-
-2. **Instalar las dependencias**
-   ```bash
-   npm install
-   ```
-
-3. **Configurar las variables de entorno**
-   Crea un archivo `.env.local` en la raíz del proyecto y añade tus credenciales de Firebase:
-   ```env
-   NEXT_PUBLIC_FIREBASE_API_KEY=tu_api_key
-   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=tu_auth_domain
-   NEXT_PUBLIC_FIREBASE_PROJECT_ID=tu_project_id
-   NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=tu_storage_bucket
-   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=tu_messaging_id
-   NEXT_PUBLIC_FIREBASE_APP_ID=tu_app_id
-   ```
-
-4. **Ejecutar el servidor de desarrollo**
-   ```bash
-   npm run dev
-   ```
-   Abre [http://localhost:3000](http://localhost:3000) en tu navegador para ver la aplicación.
-
 ## 📐 Decisiones de Diseño (UI/UX)
 
 La aplicación implementa un diseño sumamente detallado pensando en el usuario final en mostrador:
@@ -73,6 +41,3 @@ La aplicación implementa un diseño sumamente detallado pensando en el usuario 
 - **Mobile**: Menú de navegación inferior (Bottom Navigation) táctil que respeta el espacio de la "Isla Dinámica" y los gestos de navegación modernos, complementado por Modales "Bottom Sheet" de altura dinámica adaptativa.
 
 ---
-<div align="center">
-  <p>Construido con pasión y precisión para la excelencia operativa.</p>
-</div>
