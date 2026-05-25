@@ -10,7 +10,7 @@ interface Props {
 }
 
 export default function NuevaVentaModal({ isOpen, onClose }: Props) {
-  const { productos, registrarVenta } = useTienda();
+  const { productos, registrarVenta, tasaBCV } = useTienda();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [busqueda, setBusqueda] = useState('');
   
@@ -32,6 +32,12 @@ export default function NuevaVentaModal({ isOpen, onClose }: Props) {
   }, [productos, busqueda, activeTab]);
 
   const productoSelectData = productos.find(p => p.id === productoSeleccionado);
+
+  const totalUSD = useMemo(() => {
+    if (!productoSelectData) return 0;
+    const precio = precioPersonalizado ? Number(precioPersonalizado) : productoSelectData.precioVenta;
+    return precio * Number(cantidad);
+  }, [precioPersonalizado, productoSelectData, cantidad]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -136,7 +142,14 @@ export default function NuevaVentaModal({ isOpen, onClose }: Props) {
                           <p className="font-bold text-sm text-polar-white leading-tight">{p.nombre}</p>
                           <p className="text-xs text-muted-gray mt-0.5">Stock: {p.stockActual} • {p.categoria}</p>
                         </div>
-                        <p className="font-space-grotesk font-bold text-cashflow-emerald">${p.precioVenta.toFixed(2)}</p>
+                        <div className="text-right">
+                          <p className="font-space-grotesk font-bold text-cashflow-emerald">${p.precioVenta.toFixed(2)}</p>
+                          {tasaBCV && (
+                            <p className="text-[10px] text-muted-gray font-space-grotesk">
+                              Bs. {new Intl.NumberFormat('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(p.precioVenta * tasaBCV)}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     ))}
                     {productosDisponibles.length === 0 && (
@@ -148,7 +161,10 @@ export default function NuevaVentaModal({ isOpen, onClose }: Props) {
                 <div className="p-4 rounded-xl bg-cashflow-emerald/10 border border-cashflow-emerald/20 flex justify-between items-center">
                   <div>
                     <p className="font-bold text-polar-white">{productoSelectData?.nombre}</p>
-                    <p className="text-xs text-cashflow-emerald font-space-grotesk">${productoSelectData?.precioVenta.toFixed(2)} sugerido</p>
+                    <p className="text-xs text-cashflow-emerald font-space-grotesk">
+                      ${productoSelectData?.precioVenta.toFixed(2)} sugerido
+                      {tasaBCV && ` (Bs. ${new Intl.NumberFormat('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format((productoSelectData?.precioVenta || 0) * tasaBCV)})`}
+                    </p>
                   </div>
                   <button type="button" onClick={() => setProductoSeleccionado('')} className="text-xs font-bold text-muted-gray hover:text-polar-white bg-white/5 px-3 py-1.5 rounded-lg transition-colors">Cambiar</button>
                 </div>
@@ -180,11 +196,21 @@ export default function NuevaVentaModal({ isOpen, onClose }: Props) {
                   </select>
                 </div>
 
-                <div className="p-4 rounded-xl border border-cashflow-emerald/30 bg-cashflow-emerald/5 flex justify-between items-center">
-                  <p className="text-sm text-polar-white font-medium">Total a Cobrar:</p>
-                  <p className="font-space-grotesk text-2xl font-bold text-cashflow-emerald">
-                    ${((precioPersonalizado ? Number(precioPersonalizado) : (productoSelectData?.precioVenta || 0)) * Number(cantidad)).toFixed(2)}
-                  </p>
+                <div className="p-4 rounded-xl border border-cashflow-emerald/30 bg-cashflow-emerald/5 flex flex-col gap-2">
+                  <div className="flex justify-between items-center">
+                    <p className="text-sm text-polar-white font-medium">Total a Cobrar:</p>
+                    <p className="font-space-grotesk text-2xl font-bold text-cashflow-emerald">
+                      ${totalUSD.toFixed(2)}
+                    </p>
+                  </div>
+                  {tasaBCV && (
+                    <div className="flex justify-between items-center border-t border-cashflow-emerald/10 pt-2 text-xs">
+                      <p className="text-muted-gray">Total en Bolívares (BCV):</p>
+                      <p className="font-space-grotesk font-bold text-polar-white">
+                        Bs. {new Intl.NumberFormat('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(totalUSD * tasaBCV)}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </>
             )}

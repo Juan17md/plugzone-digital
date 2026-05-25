@@ -23,6 +23,11 @@ interface TiendaState {
   gastos: GastoOperativo[];
   registrarVenta: (venta: Omit<Venta, 'id' | 'fecha' | 'gananciaNeta'>) => Promise<void>;
   registrarGasto: (gasto: Omit<GastoOperativo, 'id' | 'fecha'>) => Promise<void>;
+
+  // Tasa de cambio BCV
+  tasaBCV: number | null;
+  fechaTasaBCV: string | null;
+  loadingTasa: boolean;
 }
 
 const defaultState: TiendaState = {
@@ -31,7 +36,8 @@ const defaultState: TiendaState = {
   productos: [], loadingProductos: true,
   agregarProducto: async () => {}, actualizarProducto: async () => {}, eliminarProducto: async () => {},
   ventas: [], gastos: [],
-  registrarVenta: async () => {}, registrarGasto: async () => {}
+  registrarVenta: async () => {}, registrarGasto: async () => {},
+  tasaBCV: null, fechaTasaBCV: null, loadingTasa: true
 };
 
 const TiendaContext = createContext<TiendaState>(defaultState);
@@ -47,6 +53,10 @@ export function TiendaProvider({ children }: { children: React.ReactNode }) {
   const [ventas, setVentas] = useState<Venta[]>([]);
   const [gastos, setGastos] = useState<GastoOperativo[]>([]);
   const [loadingProductos, setLoadingProductos] = useState(true);
+
+  const [tasaBCV, setTasaBCV] = useState<number | null>(null);
+  const [fechaTasaBCV, setFechaTasaBCV] = useState<string | null>(null);
+  const [loadingTasa, setLoadingTasa] = useState(true);
 
   // 0. Autenticación PWA
   useEffect(() => {
@@ -133,12 +143,47 @@ export function TiendaProvider({ children }: { children: React.ReactNode }) {
     await addDoc(collection(db, 'gastos'), { ...gasto, fecha: new Date().toISOString() });
   };
 
+  // 5. Cargar Tasa BCV Oficial
+  useEffect(() => {
+    const fetchTasa = async () => {
+      setLoadingTasa(true);
+      try {
+        const res = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
+        if (!res.ok) throw new Error('Error al consultar la API de DolarApi');
+        const data = await res.json();
+        
+        if (data && typeof data.promedio === 'number') {
+          setTasaBCV(data.promedio);
+          setFechaTasaBCV(data.fechaActualizacion || new Date().toISOString());
+          
+          // Guardar en caché
+          localStorage.setItem('pz_tasa_bcv', data.promedio.toString());
+          localStorage.setItem('pz_tasa_bcv_fecha', data.fechaActualizacion || new Date().toISOString());
+        }
+      } catch (error) {
+        console.error('Error fetching rate, trying cache:', error);
+        // Intentar recuperar de caché
+        const cachedTasa = localStorage.getItem('pz_tasa_bcv');
+        const cachedFecha = localStorage.getItem('pz_tasa_bcv_fecha');
+        if (cachedTasa) {
+          setTasaBCV(parseFloat(cachedTasa));
+          setFechaTasaBCV(cachedFecha || null);
+        }
+      } finally {
+        setLoadingTasa(false);
+      }
+    };
+
+    fetchTasa();
+  }, []);
+
   return (
     <TiendaContext.Provider value={{ 
       isOffline, user, authLoading, 
       productos, loadingProductos,
       agregarProducto, actualizarProducto, eliminarProducto,
-      ventas, gastos, registrarVenta, registrarGasto
+      ventas, gastos, registrarVenta, registrarGasto,
+      tasaBCV, fechaTasaBCV, loadingTasa
     }}>
       {children}
     </TiendaContext.Provider>

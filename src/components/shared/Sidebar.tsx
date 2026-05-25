@@ -6,6 +6,7 @@ import { LayoutDashboard, PackageSearch, CircleDollarSign, History, LogOut, Sun,
 import { getAuth, signOut } from 'firebase/auth';
 import { app } from '@/services/firebase';
 import { useTheme } from '@/components/providers/ThemeProvider';
+import { useTienda } from '@/context/TiendaContext';
 
 const navItems = [
   { href: '/dashboard', label: 'Inicio', icon: LayoutDashboard },
@@ -17,6 +18,7 @@ const navItems = [
 export default function Sidebar() {
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
+  const { tasaBCV, fechaTasaBCV, loadingTasa, isOffline } = useTienda();
 
   const handleLogout = async () => {
     try {
@@ -60,6 +62,42 @@ export default function Sidebar() {
           );
         })}
       </nav>
+
+      {/* Tasa BCV Widget */}
+      <div className="px-4 py-2">
+        <div className="bg-[var(--glass-bg)] border border-[var(--glass-border)] rounded-2xl p-4 flex flex-col gap-1.5 backdrop-blur-md shadow-[var(--glass-shadow)]">
+          <div className="flex items-center justify-between text-muted-gray">
+            <span className="text-[10px] uppercase font-bold tracking-wider">Tasa BCV Oficial</span>
+            <span className="flex h-2 w-2 relative">
+              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isOffline ? 'bg-amber-400' : 'bg-cashflow-emerald'}`}></span>
+              <span className={`relative inline-flex rounded-full h-2 w-2 ${isOffline ? 'bg-amber-500' : 'bg-cashflow-emerald'}`}></span>
+            </span>
+          </div>
+          
+          <div className="flex items-baseline justify-between mt-1">
+            {loadingTasa && !tasaBCV ? (
+              <span className="text-sm font-medium text-muted-gray animate-pulse">Cargando tasa...</span>
+            ) : tasaBCV ? (
+              <>
+                <span className="text-xl font-space-grotesk font-extrabold text-polar-white">
+                  Bs. {new Intl.NumberFormat('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(tasaBCV)}
+                </span>
+                {isOffline && (
+                  <span className="text-[10px] font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded">Caché</span>
+                )}
+              </>
+            ) : (
+              <span className="text-sm font-semibold text-alert-coral">No disponible</span>
+            )}
+          </div>
+          
+          {fechaTasaBCV && (
+            <p className="text-[10px] text-muted-gray mt-0.5">
+              Ref: {new Date(fechaTasaBCV).toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' })} - {new Date(fechaTasaBCV).toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit' })}
+            </p>
+          )}
+        </div>
+      </div>
 
       {/* Bottom Actions */}
       <div className="p-4 border-t border-white/5 flex flex-col gap-2">
