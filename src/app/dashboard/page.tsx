@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Smartphone, PackageOpen, CircleDollarSign, ArrowRight, Sun, Moon, Receipt, ReceiptText, ArrowRightLeft, Calendar, Plus } from 'lucide-react';
+import { Smartphone, PackageOpen, CircleDollarSign, ArrowRight, Sun, Moon, Receipt, ReceiptText, ArrowRightLeft, Calendar, Plus, Ban } from 'lucide-react';
 import { useTienda } from '@/context/TiendaContext';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import NuevaVentaModal from '@/components/finanzas/NuevaVentaModal';
@@ -10,7 +10,7 @@ import ProductModal from '@/components/inventario/ProductModal';
 import Link from 'next/link';
 
 export default function DashboardPage() {
-  const { ventas, productos } = useTienda();
+  const { ventas, productos, anularVenta } = useTienda();
   const { theme, toggleTheme } = useTheme();
   
   // Estados para Modales
@@ -18,6 +18,8 @@ export default function DashboardPage() {
   const [modalGastoOpen, setModalGastoOpen] = useState(false);
   const [modalProductoOpen, setModalProductoOpen] = useState(false);
   const [productoActiveTab, setProductoActiveTab] = useState<'Telefonos' | 'Accesorios'>('Telefonos');
+  const [ventaAAnular, setVentaAAnular] = useState<string | null>(null);
+  const [isAnulando, setIsAnulando] = useState(false);
 
   // Cálculos del Día
   const metricas = useMemo(() => {
@@ -49,7 +51,8 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <>
+      <div className="space-y-6">
       <header className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 className="font-plus-jakarta font-bold text-2xl sm:text-3xl text-polar-white truncate">Panel Principal</h2>
@@ -185,9 +188,20 @@ export default function DashboardPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-[10px] text-muted-gray uppercase tracking-wider mb-0.5">{venta.cantidadVendida} und.</p>
-                    <p className={`font-space-grotesk font-bold text-sm sm:text-base ${venta.anulada ? 'text-muted-gray line-through' : 'text-cashflow-emerald'}`}>${(venta.precioVentaFinal * venta.cantidadVendida).toFixed(2)}</p>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <div className="text-right">
+                      <p className="text-[10px] text-muted-gray uppercase tracking-wider mb-0.5">{venta.cantidadVendida} und.</p>
+                      <p className={`font-space-grotesk font-bold text-sm sm:text-base ${venta.anulada ? 'text-muted-gray line-through' : 'text-cashflow-emerald'}`}>${(venta.precioVentaFinal * venta.cantidadVendida).toFixed(2)}</p>
+                    </div>
+                    {!venta.anulada && (
+                      <button
+                        onClick={() => setVentaAAnular(venta.id)}
+                        className="p-2 rounded-lg bg-alert-coral/10 hover:bg-alert-coral/20 text-alert-coral transition-colors cursor-pointer shrink-0"
+                        title="Anular venta"
+                      >
+                        <Ban size={14} />
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -204,6 +218,7 @@ export default function DashboardPage() {
                       <th className="p-4 font-medium text-xs text-muted-gray uppercase tracking-wider">Método de Pago</th>
                       <th className="p-4 font-medium text-xs text-muted-gray uppercase tracking-wider text-center">Cantidad</th>
                       <th className="p-4 font-medium text-xs text-muted-gray uppercase tracking-wider text-right">Monto Total</th>
+                      <th className="p-4 font-medium text-xs text-muted-gray uppercase tracking-wider text-center">Acción</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
@@ -231,6 +246,17 @@ export default function DashboardPage() {
                         <td className={`p-4 text-sm font-space-grotesk font-bold text-right ${venta.anulada ? 'text-muted-gray line-through' : 'text-cashflow-emerald'}`}>
                           ${(venta.precioVentaFinal * venta.cantidadVendida).toFixed(2)}
                         </td>
+                        <td className="p-4 text-center">
+                          {!venta.anulada && (
+                            <button
+                              onClick={() => setVentaAAnular(venta.id)}
+                              className="p-2 rounded-lg bg-alert-coral/10 hover:bg-alert-coral/20 text-alert-coral transition-colors cursor-pointer inline-flex items-center justify-center"
+                              title="Anular venta"
+                            >
+                              <Ban size={14} />
+                            </button>
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -246,6 +272,53 @@ export default function DashboardPage() {
       <NuevoGastoModal isOpen={modalGastoOpen} onClose={() => setModalGastoOpen(false)} />
       <ProductModal isOpen={modalProductoOpen} onClose={() => setModalProductoOpen(false)} activeTab={productoActiveTab} />
     </div>
-  );
+
+    {/* Modal de Confirmación de Anulación */}
+    {ventaAAnular && (
+      <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+        <div className="bg-titanium-slate w-full max-w-sm rounded-3xl border border-[var(--glass-border)] shadow-[var(--glass-shadow)] p-6 space-y-6 animate-in zoom-in-95 duration-200">
+          <div className="flex flex-col items-center text-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-alert-coral/10 text-alert-coral flex items-center justify-center">
+              <Ban size={24} />
+            </div>
+            <h3 className="font-plus-jakarta text-lg font-bold text-polar-white">¿Anular esta venta?</h3>
+            <p className="text-xs text-muted-gray leading-relaxed">
+              Esta acción es irreversible. Se marcará la venta como anulada, se descontará de los cálculos financieros y se devolverá el stock de productos al inventario.
+            </p>
+          </div>
+          
+          <div className="flex gap-3">
+            <button
+              type="button"
+              disabled={isAnulando}
+              onClick={() => setVentaAAnular(null)}
+              className="flex-1 py-2.5 rounded-xl font-medium text-polar-white bg-[var(--glass-bg)] hover:bg-[var(--glass-border)] border border-[var(--glass-border)] transition-colors text-sm"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              disabled={isAnulando}
+              onClick={async () => {
+                setIsAnulando(true);
+                try {
+                  await anularVenta(ventaAAnular);
+                  setVentaAAnular(null);
+                } catch (err: any) {
+                  alert(err.message || "Error al anular la venta");
+                } finally {
+                  setIsAnulando(false);
+                }
+              }}
+              className="flex-1 py-2.5 rounded-xl font-bold bg-alert-coral text-white hover:scale-105 active:scale-95 transition-all text-sm flex items-center justify-center gap-1.5"
+            >
+              {isAnulando ? 'Anulando...' : 'Confirmar'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+  </>
+);
 }
 
