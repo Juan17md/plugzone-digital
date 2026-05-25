@@ -263,7 +263,7 @@ export default function HistorialPage() {
               </div>
               <h3 className="font-plus-jakarta text-lg font-bold text-polar-white">¿Anular esta venta?</h3>
               <p className="text-xs text-muted-gray leading-relaxed">
-                Esta acción es irreversible. Se marcará la venta como anulada, se descontará de los cálculos financieros y se devolverá el stock de productos al inventario.
+                Esta acción no se puede deshacer. Se reajustará el stock y las finanzas automáticamente.
               </p>
             </div>
             
