@@ -24,7 +24,7 @@ export default function DashboardPage() {
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
 
-    const ventasHoy = ventas.filter(v => new Date(v.fecha) >= hoy);
+    const ventasHoy = ventas.filter(v => new Date(v.fecha) >= hoy && !v.anulada);
     const ingresosHoy = ventasHoy.reduce((acc, v) => acc + (v.precioVentaFinal * v.cantidadVendida), 0);
     const equiposHoy = ventasHoy.reduce((acc, v) => acc + v.cantidadVendida, 0);
     
@@ -172,19 +172,22 @@ export default function DashboardPage() {
             {/* Vista Móvil: Tarjetas compactas */}
             <div className="md:hidden flex flex-col gap-2.5">
               {ultimasVentas.map((venta) => (
-                <div key={venta.id} className="glass-panel p-3.5 rounded-xl flex items-center justify-between gap-3">
+                <div key={venta.id} className={`glass-panel p-3.5 rounded-xl flex items-center justify-between gap-3 ${venta.anulada ? 'opacity-55' : ''}`}>
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-9 h-9 rounded-lg bg-cashflow-emerald/10 text-cashflow-emerald flex items-center justify-center shrink-0">
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${venta.anulada ? 'bg-white/5 text-muted-gray' : 'bg-cashflow-emerald/10 text-cashflow-emerald'}`}>
                       <ReceiptText size={16} />
                     </div>
                     <div className="min-w-0">
-                      <h4 className="font-bold text-polar-white text-xs sm:text-sm leading-tight truncate">{venta.nombreProducto}</h4>
-                      <p className="text-[10px] text-muted-gray mt-0.5">{formatearFecha(venta.fecha)} • {venta.metodoPago}</p>
+                      <h4 className={`font-bold text-xs sm:text-sm leading-tight truncate ${venta.anulada ? 'line-through text-muted-gray' : 'text-polar-white'}`}>{venta.nombreProducto}</h4>
+                      <p className="text-[10px] text-muted-gray mt-0.5">
+                        {formatearFecha(venta.fecha)} • {venta.metodoPago}
+                        {venta.anulada && <span className="ml-2 px-1.5 py-0.5 rounded bg-alert-coral/10 text-alert-coral font-bold uppercase text-[8px] tracking-wide">Anulada</span>}
+                      </p>
                     </div>
                   </div>
                   <div className="text-right shrink-0">
                     <p className="text-[10px] text-muted-gray uppercase tracking-wider mb-0.5">{venta.cantidadVendida} und.</p>
-                    <p className="font-space-grotesk font-bold text-cashflow-emerald text-sm sm:text-base">${(venta.precioVentaFinal * venta.cantidadVendida).toFixed(2)}</p>
+                    <p className={`font-space-grotesk font-bold text-sm sm:text-base ${venta.anulada ? 'text-muted-gray line-through' : 'text-cashflow-emerald'}`}>${(venta.precioVentaFinal * venta.cantidadVendida).toFixed(2)}</p>
                   </div>
                 </div>
               ))}
@@ -205,12 +208,17 @@ export default function DashboardPage() {
                   </thead>
                   <tbody className="divide-y divide-white/5">
                     {ultimasVentas.map((venta) => (
-                      <tr key={venta.id} className="hover:bg-white/5 transition-colors">
+                      <tr key={venta.id} className={`hover:bg-white/5 transition-colors ${venta.anulada ? 'opacity-55' : ''}`}>
                         <td className="p-4 text-xs text-muted-gray font-medium">
                           {formatearFecha(venta.fecha)}
                         </td>
-                        <td className="p-4 text-sm font-bold text-polar-white">
+                        <td className={`p-4 text-sm font-bold ${venta.anulada ? 'line-through text-muted-gray' : 'text-polar-white'}`}>
                           {venta.nombreProducto}
+                          {venta.anulada && (
+                            <span className="ml-2 px-1.5 py-0.5 rounded bg-alert-coral/10 text-alert-coral text-[9px] font-bold uppercase tracking-wider">
+                              Anulada
+                            </span>
+                          )}
                         </td>
                         <td className="p-4 text-xs text-polar-white">
                           <span className="inline-flex px-2 py-0.5 rounded bg-white/5 border border-white/10">
@@ -220,7 +228,7 @@ export default function DashboardPage() {
                         <td className="p-4 text-sm font-space-grotesk font-bold text-polar-white text-center">
                           {venta.cantidadVendida}
                         </td>
-                        <td className="p-4 text-sm font-space-grotesk font-bold text-cashflow-emerald text-right">
+                        <td className={`p-4 text-sm font-space-grotesk font-bold text-right ${venta.anulada ? 'text-muted-gray line-through' : 'text-cashflow-emerald'}`}>
                           ${(venta.precioVentaFinal * venta.cantidadVendida).toFixed(2)}
                         </td>
                       </tr>

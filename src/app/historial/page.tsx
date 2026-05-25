@@ -2,13 +2,15 @@
 
 import { useState, useMemo } from 'react';
 import { useTienda } from '@/context/TiendaContext';
-import { Search, ReceiptText, Receipt, Calendar, ChevronLeft, ChevronRight, ArrowRightLeft, TrendingDown, ShoppingCart } from 'lucide-react';
+import { Search, ReceiptText, Receipt, Calendar, ChevronLeft, ChevronRight, ArrowRightLeft, TrendingDown, ShoppingCart, Ban } from 'lucide-react';
 
 export default function HistorialPage() {
-  const { ventas, gastos } = useTienda();
+  const { ventas, gastos, anularVenta } = useTienda();
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [activeTab, setActiveTab] = useState<'ventas' | 'gastos'>('ventas');
+  const [ventaAAnular, setVentaAAnular] = useState<string | null>(null);
+  const [isAnulando, setIsAnulando] = useState(false);
   const itemsPerPage = 10;
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -52,7 +54,8 @@ export default function HistorialPage() {
   };
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <>
+      <div className="space-y-4 md:space-y-6">
       
       {/* Cabecera */}
       <div>
@@ -116,18 +119,24 @@ export default function HistorialPage() {
           ) : (
             <div className="flex flex-col gap-3">
               {ventasPaginadas.map((venta) => (
-                <div key={venta.id} className="glass-panel p-4 rounded-xl flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                <div key={venta.id} className={`glass-panel p-4 rounded-xl flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 transition-all ${venta.anulada ? 'opacity-55' : ''}`}>
                   
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-cashflow-emerald/10 text-cashflow-emerald flex items-center justify-center shrink-0">
+                    <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shrink-0 ${venta.anulada ? 'bg-white/5 text-muted-gray' : 'bg-cashflow-emerald/10 text-cashflow-emerald'}`}>
                       <ReceiptText size={18} />
                     </div>
                     <div className="min-w-0">
-                      <h4 className="font-bold text-polar-white leading-tight text-sm sm:text-base truncate">{venta.nombreProducto}</h4>
+                      <h4 className={`font-bold leading-tight text-sm sm:text-base truncate ${venta.anulada ? 'line-through text-muted-gray' : 'text-polar-white'}`}>{venta.nombreProducto}</h4>
                       <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5 text-[11px] sm:text-xs text-muted-gray">
                         <span className="flex items-center gap-1 whitespace-nowrap"><Calendar size={10} /> {formatearFecha(venta.fecha)}</span>
                         <span className="hidden sm:inline">•</span>
                         <span className="flex items-center gap-1 whitespace-nowrap"><ArrowRightLeft size={10} /> {venta.metodoPago}</span>
+                        {venta.anulada && (
+                          <>
+                            <span className="hidden sm:inline">•</span>
+                            <span className="px-1.5 py-0.5 rounded bg-alert-coral/10 text-alert-coral font-bold uppercase text-[9px] tracking-wide">Anulada</span>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -140,10 +149,20 @@ export default function HistorialPage() {
                     
                     <div className="text-right">
                       <p className="text-[10px] sm:text-xs text-muted-gray uppercase tracking-wider mb-0.5">Ingreso Neto</p>
-                      <p className="font-space-grotesk font-bold text-cashflow-emerald text-base sm:text-lg">
+                      <p className={`font-space-grotesk font-bold text-base sm:text-lg ${venta.anulada ? 'text-muted-gray line-through' : 'text-cashflow-emerald'}`}>
                         ${(venta.precioVentaFinal * venta.cantidadVendida).toFixed(2)}
                       </p>
                     </div>
+
+                    {!venta.anulada && (
+                      <button
+                        onClick={() => setVentaAAnular(venta.id)}
+                        className="p-2 sm:p-2.5 rounded-lg bg-alert-coral/10 hover:bg-alert-coral/20 text-alert-coral transition-colors cursor-pointer self-end sm:self-center shrink-0"
+                        title="Anular venta"
+                      >
+                        <Ban size={16} />
+                      </button>
+                    )}
                   </div>
 
                 </div>
@@ -233,5 +252,52 @@ export default function HistorialPage() {
         </div>
       )}
     </div>
+      
+      {/* Modal de Confirmación de Anulación */}
+      {ventaAAnular && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-titanium-slate w-full max-w-sm rounded-3xl border border-[var(--glass-border)] shadow-[var(--glass-shadow)] p-6 space-y-6 animate-in zoom-in-95 duration-200">
+            <div className="flex flex-col items-center text-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-alert-coral/10 text-alert-coral flex items-center justify-center">
+                <Ban size={24} />
+              </div>
+              <h3 className="font-plus-jakarta text-lg font-bold text-polar-white">¿Anular esta venta?</h3>
+              <p className="text-xs text-muted-gray leading-relaxed">
+                Esta acción es irreversible. Se marcará la venta como anulada, se descontará de los cálculos financieros y se devolverá el stock de productos al inventario.
+              </p>
+            </div>
+            
+            <div className="flex gap-3">
+              <button
+                type="button"
+                disabled={isAnulando}
+                onClick={() => setVentaAAnular(null)}
+                className="flex-1 py-2.5 rounded-xl font-medium text-polar-white bg-[var(--glass-bg)] hover:bg-[var(--glass-border)] border border-[var(--glass-border)] transition-colors text-sm"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={isAnulando}
+                onClick={async () => {
+                  setIsAnulando(true);
+                  try {
+                    await anularVenta(ventaAAnular);
+                    setVentaAAnular(null);
+                  } catch (err: any) {
+                    alert(err.message || "Error al anular la venta");
+                  } finally {
+                    setIsAnulando(false);
+                  }
+                }}
+                className="flex-1 py-2.5 rounded-xl font-bold bg-alert-coral text-white hover:scale-105 active:scale-95 transition-all text-sm flex items-center justify-center gap-1.5"
+              >
+                {isAnulando ? 'Anulando...' : 'Confirmar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

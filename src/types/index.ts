@@ -26,6 +26,7 @@ export interface Venta {
   metodoPago: MetodoPago;
   gananciaNeta: number;
   fecha: string;
+  anulada?: boolean;
 }
 
 export type CategoriaGasto = 'Alquiler' | 'Sueldos' | 'Servicios' | 'Publicidad' | 'Reparaciones' | 'Envíos' | 'Suministros' | 'Otros';

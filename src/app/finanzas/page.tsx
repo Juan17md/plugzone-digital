@@ -20,7 +20,7 @@ export default function FinanzasPage() {
 
     const ventasDelMes = ventas.filter(v => {
       const fecha = new Date(v.fecha);
-      return fecha.getMonth() === mesActual && fecha.getFullYear() === anoActual;
+      return fecha.getMonth() === mesActual && fecha.getFullYear() === anoActual && !v.anulada;
     });
 
     const gastosDelMes = gastos.filter(g => {

@@ -23,6 +23,7 @@ interface TiendaState {
   gastos: GastoOperativo[];
   registrarVenta: (venta: Omit<Venta, 'id' | 'fecha' | 'gananciaNeta'>) => Promise<void>;
   registrarGasto: (gasto: Omit<GastoOperativo, 'id' | 'fecha'>) => Promise<void>;
+  anularVenta: (id: string) => Promise<void>;
 
   // Tasa de cambio BCV
   tasaBCV: number | null;
@@ -36,7 +37,7 @@ const defaultState: TiendaState = {
   productos: [], loadingProductos: true,
   agregarProducto: async () => {}, actualizarProducto: async () => {}, eliminarProducto: async () => {},
   ventas: [], gastos: [],
-  registrarVenta: async () => {}, registrarGasto: async () => {},
+  registrarVenta: async () => {}, registrarGasto: async () => {}, anularVenta: async () => {},
   tasaBCV: null, fechaTasaBCV: null, loadingTasa: true
 };
 
@@ -143,6 +144,33 @@ export function TiendaProvider({ children }: { children: React.ReactNode }) {
     await addDoc(collection(db, 'gastos'), { ...gasto, fecha: new Date().toISOString() });
   };
 
+  const anularVenta = async (id: string) => {
+    const ventaRef = doc(db, 'ventas', id);
+    
+    await runTransaction(db, async (transaction) => {
+      const ventaDoc = await transaction.get(ventaRef);
+      if (!ventaDoc.exists()) throw new Error("La venta no existe.");
+      
+      const ventaData = ventaDoc.data() as Venta;
+      if (ventaData.anulada) throw new Error("Esta venta ya ha sido anulada.");
+      
+      // Marcar la venta como anulada
+      transaction.update(ventaRef, { anulada: true });
+      
+      // Devolver stock al producto
+      if (ventaData.productoId) {
+        const productoRef = doc(db, 'productos', ventaData.productoId);
+        const prodDoc = await transaction.get(productoRef);
+        if (prodDoc.exists()) {
+          const stockActual = prodDoc.data().stockActual || 0;
+          transaction.update(productoRef, { 
+            stockActual: stockActual + ventaData.cantidadVendida 
+          });
+        }
+      }
+    });
+  };
+
   // 5. Cargar Tasa BCV Oficial
   useEffect(() => {
     const fetchTasa = async () => {
@@ -182,7 +210,7 @@ export function TiendaProvider({ children }: { children: React.ReactNode }) {
       isOffline, user, authLoading, 
       productos, loadingProductos,
       agregarProducto, actualizarProducto, eliminarProducto,
-      ventas, gastos, registrarVenta, registrarGasto,
+      ventas, gastos, registrarVenta, registrarGasto, anularVenta,
       tasaBCV, fechaTasaBCV, loadingTasa
     }}>
       {children}
