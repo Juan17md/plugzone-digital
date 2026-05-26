@@ -182,6 +182,11 @@ export default function DashboardPage() {
                     </div>
                     <div className="min-w-0">
                       <h4 className={`font-bold text-xs sm:text-sm leading-tight truncate ${venta.anulada ? 'line-through text-muted-gray' : 'text-polar-white'}`}>{venta.nombreProducto}</h4>
+                      {venta.nombreCliente && (
+                        <p className="text-[10px] text-cashflow-emerald font-semibold mt-0.5 leading-none">
+                          Cliente: {venta.nombreCliente}
+                        </p>
+                      )}
                       <p className="text-[10px] text-muted-gray mt-0.5">
                         {formatearFecha(venta.fecha)} • {venta.metodoPago}
                         {venta.anulada && <span className="ml-2 px-1.5 py-0.5 rounded bg-alert-coral/10 text-alert-coral font-bold uppercase text-[8px] tracking-wide">Anulada</span>}
@@ -228,9 +233,14 @@ export default function DashboardPage() {
                           {formatearFecha(venta.fecha)}
                         </td>
                         <td className={`p-4 text-sm font-bold ${venta.anulada ? 'line-through text-muted-gray' : 'text-polar-white'}`}>
-                          {venta.nombreProducto}
+                          <div>{venta.nombreProducto}</div>
+                          {venta.nombreCliente && (
+                            <div className="text-xs text-muted-gray font-normal mt-0.5">
+                              Cliente: {venta.nombreCliente} {venta.cedulaCliente ? `(${venta.cedulaCliente})` : ''}
+                            </div>
+                          )}
                           {venta.anulada && (
-                            <span className="ml-2 px-1.5 py-0.5 rounded bg-alert-coral/10 text-alert-coral text-[9px] font-bold uppercase tracking-wider">
+                            <span className="inline-block mt-1 px-1.5 py-0.5 rounded bg-alert-coral/10 text-alert-coral text-[9px] font-bold uppercase tracking-wider">
                               Anulada
                             </span>
                           )}

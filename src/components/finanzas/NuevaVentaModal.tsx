@@ -19,6 +19,12 @@ export default function NuevaVentaModal({ isOpen, onClose }: Props) {
   const [cantidad, setCantidad] = useState('1');
   const [precioPersonalizado, setPrecioPersonalizado] = useState('');
   const [metodoPago, setMetodoPago] = useState<'Efectivo' | 'Punto' | 'Zelle' | 'Pago Móvil' | 'Transferencia' | 'Tarjeta'>('Efectivo');
+  
+  // Datos del Cliente (Opcional)
+  const [nombreCliente, setNombreCliente] = useState('');
+  const [cedulaCliente, setCedulaCliente] = useState('');
+  const [telefonoCliente, setTelefonoCliente] = useState('');
+  const [direccionCliente, setDireccionCliente] = useState('');
 
   const productosDisponibles = useMemo(() => {
     return productos.filter(p => {
@@ -53,7 +59,10 @@ export default function NuevaVentaModal({ isOpen, onClose }: Props) {
         cantidadVendida: Number(cantidad),
         precioVentaFinal: precioVentaFinal,
         metodoPago,
-        // gananciaNeta se calcula atómicamente en TiendaContext
+        nombreCliente: nombreCliente.trim() || undefined,
+        cedulaCliente: cedulaCliente.trim() || undefined,
+        telefonoCliente: telefonoCliente.trim() || undefined,
+        direccionCliente: direccionCliente.trim() || undefined,
       });
       
       // Reset form
@@ -61,6 +70,10 @@ export default function NuevaVentaModal({ isOpen, onClose }: Props) {
       setCantidad('1');
       setPrecioPersonalizado('');
       setBusqueda('');
+      setNombreCliente('');
+      setCedulaCliente('');
+      setTelefonoCliente('');
+      setDireccionCliente('');
       onClose();
     } catch (error: any) {
       alert(error.message || "Error al registrar la venta.");
@@ -194,6 +207,57 @@ export default function NuevaVentaModal({ isOpen, onClose }: Props) {
                     <option value="Zelle">Zelle</option>
                     <option value="Tarjeta">Tarjeta de Débito</option>
                   </select>
+                </div>
+
+                {/* Datos del Cliente (Opcional) */}
+                <div className="space-y-3.5 p-4 rounded-2xl border border-white/5 bg-cosmic-midnight/40 backdrop-blur-md">
+                  <p className="text-xs font-bold text-muted-gray uppercase tracking-wider">Datos del Cliente (Opcional)</p>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-medium text-muted-gray">Nombre Completo</label>
+                      <input 
+                        type="text" 
+                        value={nombreCliente} 
+                        onChange={e => setNombreCliente(e.target.value)} 
+                        placeholder="Ej. Juan Pérez" 
+                        className="w-full bg-cosmic-midnight/60 border border-white/10 rounded-xl px-3 py-2 text-sm text-polar-white focus:outline-none focus:border-cashflow-emerald transition-all min-h-[44px]" 
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-medium text-muted-gray">Cédula / RIF</label>
+                      <input 
+                        type="text" 
+                        value={cedulaCliente} 
+                        onChange={e => setCedulaCliente(e.target.value)} 
+                        placeholder="Ej. V-12345678" 
+                        className="w-full bg-cosmic-midnight/60 border border-white/10 rounded-xl px-3 py-2 text-sm text-polar-white focus:outline-none focus:border-cashflow-emerald transition-all min-h-[44px]" 
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-medium text-muted-gray">Teléfono</label>
+                      <input 
+                        type="tel" 
+                        value={telefonoCliente} 
+                        onChange={e => setTelefonoCliente(e.target.value)} 
+                        placeholder="Ej. 0412-1234567" 
+                        className="w-full bg-cosmic-midnight/60 border border-white/10 rounded-xl px-3 py-2 text-sm text-polar-white focus:outline-none focus:border-cashflow-emerald transition-all min-h-[44px]" 
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-medium text-muted-gray">Dirección</label>
+                      <input 
+                        type="text" 
+                        value={direccionCliente} 
+                        onChange={e => setDireccionCliente(e.target.value)} 
+                        placeholder="Ej. Av. Bolívar local 5" 
+                        className="w-full bg-cosmic-midnight/60 border border-white/10 rounded-xl px-3 py-2 text-sm text-polar-white focus:outline-none focus:border-cashflow-emerald transition-all min-h-[44px]" 
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <div className="p-4 rounded-xl border border-cashflow-emerald/30 bg-cashflow-emerald/5 flex flex-col gap-2">

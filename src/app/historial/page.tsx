@@ -138,6 +138,36 @@ export default function HistorialPage() {
                           </>
                         )}
                       </div>
+
+                      {/* Información del Cliente si existe */}
+                      {(venta.nombreCliente || venta.cedulaCliente || venta.telefonoCliente || venta.direccionCliente) && (
+                        <div className="mt-2 p-2 rounded-lg bg-white/5 border border-white/5 max-w-md text-[10px] sm:text-xs">
+                          <p className="font-bold text-polar-white/95 mb-1 flex items-center gap-1">
+                            <span>Cliente:</span>
+                            <span className="font-normal text-muted-gray">{venta.nombreCliente || 'No especificado'}</span>
+                          </p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-0.5 text-muted-gray">
+                            {venta.cedulaCliente && (
+                              <div>
+                                <span className="font-medium text-white/40 uppercase text-[9px] mr-1">Cédula:</span>
+                                <span className="text-polar-white/80">{venta.cedulaCliente}</span>
+                              </div>
+                            )}
+                            {venta.telefonoCliente && (
+                              <div>
+                                <span className="font-medium text-white/40 uppercase text-[9px] mr-1">Teléfono:</span>
+                                <span className="text-polar-white/80">{venta.telefonoCliente}</span>
+                              </div>
+                            )}
+                            {venta.direccionCliente && (
+                              <div className="col-span-1 sm:col-span-2">
+                                <span className="font-medium text-white/40 uppercase text-[9px] mr-1">Dirección:</span>
+                                <span className="text-polar-white/80">{venta.direccionCliente}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
 

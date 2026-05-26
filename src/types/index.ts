@@ -27,6 +27,10 @@ export interface Venta {
   gananciaNeta: number;
   fecha: string;
   anulada?: boolean;
+  nombreCliente?: string;
+  cedulaCliente?: string;
+  telefonoCliente?: string;
+  direccionCliente?: string;
 }
 
 export type CategoriaGasto = 'Alquiler' | 'Sueldos' | 'Servicios' | 'Publicidad' | 'Reparaciones' | 'Envíos' | 'Suministros' | 'Otros';
