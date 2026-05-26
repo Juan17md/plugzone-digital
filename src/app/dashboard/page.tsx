@@ -1,16 +1,17 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Smartphone, PackageOpen, CircleDollarSign, ArrowRight, Sun, Moon, Receipt, ReceiptText, ArrowRightLeft, Calendar, Plus, Ban } from 'lucide-react';
+import { Smartphone, PackageOpen, CircleDollarSign, ArrowRight, Sun, Moon, Receipt, ReceiptText, ArrowRightLeft, Calendar, Plus, Ban, Eye } from 'lucide-react';
 import { useTienda } from '@/context/TiendaContext';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import NuevaVentaModal from '@/components/finanzas/NuevaVentaModal';
 import NuevoGastoModal from '@/components/finanzas/NuevoGastoModal';
 import ProductModal from '@/components/inventario/ProductModal';
+import DetalleVentaModal from '@/components/finanzas/DetalleVentaModal';
 import Link from 'next/link';
 
 export default function DashboardPage() {
-  const { ventas, productos, anularVenta } = useTienda();
+  const { ventas, productos, anularVenta, tasaBCV } = useTienda();
   const { theme, toggleTheme } = useTheme();
   
   // Estados para Modales
@@ -20,6 +21,10 @@ export default function DashboardPage() {
   const [productoActiveTab, setProductoActiveTab] = useState<'Telefonos' | 'Accesorios'>('Telefonos');
   const [ventaAAnular, setVentaAAnular] = useState<string | null>(null);
   const [isAnulando, setIsAnulando] = useState(false);
+
+  // Detalle de Venta
+  const [selectedVentaDetalle, setSelectedVentaDetalle] = useState<any>(null);
+  const [modalDetalleOpen, setModalDetalleOpen] = useState(false);
 
   // Cálculos del Día
   const metricas = useMemo(() => {
@@ -193,15 +198,22 @@ export default function DashboardPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <div className="text-right">
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="text-right mr-1">
                       <p className="text-[10px] text-muted-gray uppercase tracking-wider mb-0.5">{venta.cantidadVendida} und.</p>
                       <p className={`font-space-grotesk font-bold text-sm sm:text-base ${venta.anulada ? 'text-muted-gray line-through' : 'text-cashflow-emerald'}`}>${(venta.precioVentaFinal * venta.cantidadVendida).toFixed(2)}</p>
                     </div>
+                    <button
+                      onClick={() => { setSelectedVentaDetalle(venta); setModalDetalleOpen(true); }}
+                      className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-polar-white transition-colors cursor-pointer shrink-0 flex items-center justify-center"
+                      title="Ver detalles"
+                    >
+                      <Eye size={14} />
+                    </button>
                     {!venta.anulada && (
                       <button
                         onClick={() => setVentaAAnular(venta.id)}
-                        className="p-2 rounded-lg bg-alert-coral/10 hover:bg-alert-coral/20 text-alert-coral transition-colors cursor-pointer shrink-0"
+                        className="p-2 rounded-lg bg-alert-coral/10 hover:bg-alert-coral/20 text-alert-coral transition-colors cursor-pointer shrink-0 flex items-center justify-center"
                         title="Anular venta"
                       >
                         <Ban size={14} />
@@ -257,15 +269,24 @@ export default function DashboardPage() {
                           ${(venta.precioVentaFinal * venta.cantidadVendida).toFixed(2)}
                         </td>
                         <td className="p-4 text-center">
-                          {!venta.anulada && (
+                          <div className="flex items-center justify-center gap-2">
                             <button
-                              onClick={() => setVentaAAnular(venta.id)}
-                              className="p-2 rounded-lg bg-alert-coral/10 hover:bg-alert-coral/20 text-alert-coral transition-colors cursor-pointer inline-flex items-center justify-center"
-                              title="Anular venta"
+                              onClick={() => { setSelectedVentaDetalle(venta); setModalDetalleOpen(true); }}
+                              className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-polar-white transition-colors cursor-pointer inline-flex items-center justify-center"
+                              title="Ver detalles"
                             >
-                              <Ban size={14} />
+                              <Eye size={14} />
                             </button>
-                          )}
+                            {!venta.anulada && (
+                              <button
+                                onClick={() => setVentaAAnular(venta.id)}
+                                className="p-2 rounded-lg bg-alert-coral/10 hover:bg-alert-coral/20 text-alert-coral transition-colors cursor-pointer inline-flex items-center justify-center"
+                                title="Anular venta"
+                              >
+                                <Ban size={14} />
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -281,6 +302,7 @@ export default function DashboardPage() {
       <NuevaVentaModal isOpen={modalVentaOpen} onClose={() => setModalVentaOpen(false)} />
       <NuevoGastoModal isOpen={modalGastoOpen} onClose={() => setModalGastoOpen(false)} />
       <ProductModal isOpen={modalProductoOpen} onClose={() => setModalProductoOpen(false)} activeTab={productoActiveTab} />
+      <DetalleVentaModal isOpen={modalDetalleOpen} onClose={() => { setModalDetalleOpen(false); setSelectedVentaDetalle(null); }} venta={selectedVentaDetalle} tasaBCV={tasaBCV} />
     </div>
 
     {/* Modal de Confirmación de Anulación */}

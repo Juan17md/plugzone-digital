@@ -2,16 +2,21 @@
 
 import { useState, useMemo } from 'react';
 import { useTienda } from '@/context/TiendaContext';
-import { Search, ReceiptText, Receipt, Calendar, ChevronLeft, ChevronRight, ArrowRightLeft, TrendingDown, ShoppingCart, Ban } from 'lucide-react';
+import { Search, ReceiptText, Receipt, Calendar, ChevronLeft, ChevronRight, ArrowRightLeft, TrendingDown, ShoppingCart, Ban, Eye } from 'lucide-react';
+import DetalleVentaModal from '@/components/finanzas/DetalleVentaModal';
 
 export default function HistorialPage() {
-  const { ventas, gastos, anularVenta } = useTienda();
+  const { ventas, gastos, anularVenta, tasaBCV } = useTienda();
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [activeTab, setActiveTab] = useState<'ventas' | 'gastos'>('ventas');
   const [ventaAAnular, setVentaAAnular] = useState<string | null>(null);
   const [isAnulando, setIsAnulando] = useState(false);
   const itemsPerPage = 10;
+
+  // Detalle de Venta
+  const [selectedVentaDetalle, setSelectedVentaDetalle] = useState<any>(null);
+  const [modalDetalleOpen, setModalDetalleOpen] = useState(false);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -184,15 +189,24 @@ export default function HistorialPage() {
                       </p>
                     </div>
 
-                    {!venta.anulada && (
+                    <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
                       <button
-                        onClick={() => setVentaAAnular(venta.id)}
-                        className="p-2 sm:p-2.5 rounded-lg bg-alert-coral/10 hover:bg-alert-coral/20 text-alert-coral transition-colors cursor-pointer self-end sm:self-center shrink-0"
-                        title="Anular venta"
+                        onClick={() => { setSelectedVentaDetalle(venta); setModalDetalleOpen(true); }}
+                        className="p-2 sm:p-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-polar-white transition-colors cursor-pointer flex items-center justify-center"
+                        title="Ver detalles"
                       >
-                        <Ban size={16} />
+                        <Eye size={16} />
                       </button>
-                    )}
+                      {!venta.anulada && (
+                        <button
+                          onClick={() => setVentaAAnular(venta.id)}
+                          className="p-2 sm:p-2.5 rounded-lg bg-alert-coral/10 hover:bg-alert-coral/20 text-alert-coral transition-colors cursor-pointer flex items-center justify-center"
+                          title="Anular venta"
+                        >
+                          <Ban size={16} />
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                 </div>
@@ -328,6 +342,9 @@ export default function HistorialPage() {
           </div>
         </div>
       )}
+
+      {/* Modal de Detalles de Venta */}
+      <DetalleVentaModal isOpen={modalDetalleOpen} onClose={() => { setModalDetalleOpen(false); setSelectedVentaDetalle(null); }} venta={selectedVentaDetalle} tasaBCV={tasaBCV} />
     </>
   );
 }
