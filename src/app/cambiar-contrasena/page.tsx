@@ -1,18 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useTienda } from '@/context/TiendaContext';
-import { Lock, Key, Eye, EyeOff, Loader2, ArrowRight } from 'lucide-react';
+import { Lock, Key, Eye, EyeOff, Loader2, ArrowRight, CheckCircle } from 'lucide-react';
 
 export default function CambiarContrasenaPage() {
   const { user, cambiarContrasena } = useTienda();
-  const router = useRouter();
   const [password, setPassword] = useState('');
   const [confirmar, setConfirmar] = useState('');
   const [mostrarContrasena, setMostrarContrasena] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [exito, setExito] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,9 +39,26 @@ export default function CambiarContrasenaPage() {
     if (error) {
       setError(error);
     } else {
-      router.push('/dashboard');
+      setExito(true);
     }
   };
+
+  if (exito) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] sm:w-[600px] sm:h-[600px] bg-cashflow-emerald/10 blur-[80px] sm:blur-[120px] rounded-full pointer-events-none" />
+        <div className="glass-panel w-full max-w-md rounded-2xl sm:rounded-3xl p-6 sm:p-8 relative z-10 shadow-2xl text-center space-y-5">
+          <div className="w-16 h-16 rounded-2xl bg-cashflow-emerald/10 flex items-center justify-center mx-auto">
+            <CheckCircle size={32} className="text-cashflow-emerald" />
+          </div>
+          <div>
+            <h1 className="font-plus-jakarta font-bold text-2xl text-polar-white">¡Contraseña actualizada!</h1>
+            <p className="text-sm text-muted-gray mt-2">Serás redirigido al sistema en un momento...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">

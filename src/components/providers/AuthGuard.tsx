@@ -57,6 +57,11 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    if (!primerInicio && pathname === RUTA_CAMBIAR_CONTRASENA) {
+      router.push('/dashboard');
+      return;
+    }
+
     if (pathname === '/login') {
       router.push('/dashboard');
       return;

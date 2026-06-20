@@ -336,6 +336,7 @@ export function TiendaProvider({ children }: { children: React.ReactNode }) {
       });
       const data = await res.json();
       if (!res.ok) return { error: data.error || 'Error al cambiar contraseña' };
+      setPrimerInicio(false);
       return {};
     } catch (err: any) {
       return { error: err.message };
