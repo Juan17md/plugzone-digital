@@ -1,25 +1,56 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useTienda } from '@/context/TiendaContext';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/services/firebase';
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, authLoading } = useTienda();
   const router = useRouter();
   const pathname = usePathname();
+  const [suscripcionLoading, setSuscripcionLoading] = useState(true);
+  const [suscripcionActiva, setSuscripcionActiva] = useState(true);
 
   useEffect(() => {
-    if (!authLoading) {
-      if (!user && pathname !== '/login') {
-        router.push('/login');
-      } else if (user && pathname === '/login') {
-        router.push('/dashboard');
-      }
+    if (!user) {
+      setSuscripcionLoading(false);
+      return;
     }
-  }, [user, authLoading, pathname, router]);
 
-  if (authLoading) {
+    const verificarSuscripcion = async () => {
+      try {
+        const ref = doc(db, 'config', 'suscripcion');
+        const snap = await getDoc(ref);
+        if (snap.exists()) {
+          setSuscripcionActiva(snap.data().activa !== false);
+        } else {
+          setSuscripcionActiva(true);
+        }
+      } catch {
+        setSuscripcionActiva(true);
+      } finally {
+        setSuscripcionLoading(false);
+      }
+    };
+
+    verificarSuscripcion();
+  }, [user]);
+
+  useEffect(() => {
+    if (authLoading || suscripcionLoading) return;
+
+    if (!user) {
+      if (pathname !== '/login') router.push('/login');
+    } else if (pathname === '/login') {
+      router.push('/dashboard');
+    } else if (!suscripcionActiva && pathname !== '/bloqueado') {
+      router.push('/bloqueado');
+    }
+  }, [user, authLoading, suscripcionLoading, suscripcionActiva, pathname, router]);
+
+  if (authLoading || suscripcionLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-cosmic-midnight">
         <div className="w-12 h-12 border-4 border-white/10 border-t-electric-cyan rounded-full animate-spin"></div>
@@ -27,15 +58,8 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Si no hay usuario y estamos en la ruta de login, renderiza el login (el children será el page de login u ocultamos el menú)
-  // Pero AuthGuard se envolverá ALREDEDOR de los componentes Sidebar y BottomNav en layout,
-  // por ende, si no hay usuario, NO renderizamos el {children} que contiene los menús,
-  // pero el contenido principal del children se manejará en el layout.
-  // Wait, layout receives {children}. If I wrap everything in AuthGuard, it blocks rendering. 
-  // Let's make AuthGuard just block rendering if not logged in AND not in login page.
-
   if (!user && pathname !== '/login') {
-    return null; // Don't render anything while redirecting
+    return null;
   }
 
   return <>{children}</>;
