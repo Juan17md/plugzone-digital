@@ -6,7 +6,7 @@ export async function PATCH(
   { params }: { params: Promise<{ uid: string }> }
 ) {
   try {
-    const admin = obtenerAdmin();
+    const admin = await obtenerAdmin();
     if (!admin) {
       return NextResponse.json({ error: 'Admin SDK no configurado' }, { status: 500 });
     }
