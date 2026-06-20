@@ -1,15 +1,19 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, orderBy, runTransaction, limit } from 'firebase/firestore';
-import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
+import { getAuth, onAuthStateChanged, getIdToken, User } from 'firebase/auth';
 import { db, app } from '@/services/firebase';
-import { Producto, Venta, GastoOperativo } from '@/types';
+import { Producto, Venta, GastoOperativo, RolUsuario, Usuario } from '@/types';
 
 interface TiendaState {
   isOffline: boolean;
   user: User | null;
   authLoading: boolean;
+  rol: RolUsuario | null;
+  rolLoading: boolean;
+  bloqueado: boolean;
+  primerInicio: boolean;
   
   // Productos
   productos: Producto[];
@@ -25,6 +29,16 @@ interface TiendaState {
   registrarGasto: (gasto: Omit<GastoOperativo, 'id' | 'fecha'>) => Promise<void>;
   anularVenta: (id: string) => Promise<void>;
 
+  // Usuarios (solo admin)
+  usuarios: Usuario[];
+  loadingUsuarios: boolean;
+  crearUsuario: (email: string, password: string, rol: RolUsuario) => Promise<{ error?: string }>;
+  editarUsuario: (uid: string, datos: { email?: string; password?: string; rol?: RolUsuario }) => Promise<{ error?: string }>;
+  cambiarContrasena: (uid: string, password: string) => Promise<{ error?: string }>;
+  alternarBloqueoUsuario: (uid: string, bloqueado: boolean) => Promise<{ error?: string }>;
+  actualizarRolUsuario: (uid: string, rol: RolUsuario) => Promise<{ error?: string }>;
+  eliminarUsuario: (uid: string) => Promise<{ error?: string }>;
+
   // Tasa de cambio BCV
   tasaBCV: number | null;
   fechaTasaBCV: string | null;
@@ -33,11 +47,13 @@ interface TiendaState {
 
 const defaultState: TiendaState = {
   isOffline: false,
-  user: null, authLoading: true,
+  user: null, authLoading: true, rol: null, rolLoading: true, bloqueado: false, primerInicio: false,
   productos: [], loadingProductos: true,
   agregarProducto: async () => {}, actualizarProducto: async () => {}, eliminarProducto: async () => {},
   ventas: [], gastos: [],
   registrarVenta: async () => {}, registrarGasto: async () => {}, anularVenta: async () => {},
+  usuarios: [], loadingUsuarios: true,
+  crearUsuario: async () => ({}), editarUsuario: async () => ({}), cambiarContrasena: async () => ({}), alternarBloqueoUsuario: async () => ({}), actualizarRolUsuario: async () => ({}), eliminarUsuario: async () => ({}),
   tasaBCV: null, fechaTasaBCV: null, loadingTasa: true
 };
 
@@ -49,11 +65,18 @@ export function TiendaProvider({ children }: { children: React.ReactNode }) {
   const [isOffline, setIsOffline] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [rol, setRol] = useState<RolUsuario | null>(null);
+  const [rolLoading, setRolLoading] = useState(true);
+  const [bloqueado, setBloqueado] = useState(false);
+  const [primerInicio, setPrimerInicio] = useState(false);
   
   const [productos, setProductos] = useState<Producto[]>([]);
   const [ventas, setVentas] = useState<Venta[]>([]);
   const [gastos, setGastos] = useState<GastoOperativo[]>([]);
   const [loadingProductos, setLoadingProductos] = useState(true);
+
+  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+  const [loadingUsuarios, setLoadingUsuarios] = useState(true);
 
   const [tasaBCV, setTasaBCV] = useState<number | null>(null);
   const [fechaTasaBCV, setFechaTasaBCV] = useState<string | null>(null);
@@ -64,10 +87,40 @@ export function TiendaProvider({ children }: { children: React.ReactNode }) {
     const auth = getAuth(app);
     const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser);
+      if (!firebaseUser) {
+        setRol(null);
+        setRolLoading(false);
+        setBloqueado(false);
+        setPrimerInicio(false);
+      }
       setAuthLoading(false);
     });
     return () => unsubscribeAuth();
   }, []);
+
+  // 0.1 Cargar rol del usuario desde Firestore
+  useEffect(() => {
+    if (!user) return;
+
+    const usuarioRef = doc(db, 'usuarios', user.uid);
+    const unsub = onSnapshot(usuarioRef, (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        setRol(data.rol || null);
+        setBloqueado(data.bloqueado === true);
+        setPrimerInicio(data.primerInicio === true);
+      } else {
+        setRol(null);
+        setBloqueado(false);
+        setPrimerInicio(false);
+      }
+      setRolLoading(false);
+    }, () => {
+      setRolLoading(false);
+    });
+
+    return () => unsub();
+  }, [user]);
 
   // 1. Detección Offline PWA
   useEffect(() => {
@@ -103,6 +156,22 @@ export function TiendaProvider({ children }: { children: React.ReactNode }) {
       unsubProductos(); unsubVentas(); unsubGastos();
     };
   }, [user]);
+
+  // 2.1 Sincronización de usuarios (solo admin)
+  useEffect(() => {
+    if (!user || rol !== 'admin') {
+      setUsuarios([]);
+      setLoadingUsuarios(false);
+      return;
+    }
+
+    const unsubUsuarios = onSnapshot(query(collection(db, 'usuarios'), orderBy('creadoEn', 'desc')), (snapshot) => {
+      setUsuarios(snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() })) as Usuario[]);
+      setLoadingUsuarios(false);
+    });
+
+    return () => unsubUsuarios();
+  }, [user, rol]);
 
   // 3. Funciones CRUD Productos
   const agregarProducto = async (producto: Omit<Producto, 'id' | 'creadoEn'>) => {
@@ -171,6 +240,108 @@ export function TiendaProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
+  // 5. Funciones CRUD Usuarios (requieren Admin SDK via API routes)
+  const getAuthToken = async (): Promise<string> => {
+    const auth = getAuth(app);
+    if (!auth.currentUser) throw new Error('No autenticado');
+    return getIdToken(auth.currentUser);
+  };
+
+  const crearUsuario = useCallback(async (email: string, password: string, rol: RolUsuario): Promise<{ error?: string }> => {
+    try {
+      const token = await getAuthToken();
+      const res = await fetch('/api/usuarios', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ email, password, rol }),
+      });
+      const data = await res.json();
+      if (!res.ok) return { error: data.error || 'Error al crear usuario' };
+      return {};
+    } catch (err: any) {
+      return { error: err.message };
+    }
+  }, []);
+
+  const alternarBloqueoUsuario = useCallback(async (uid: string, bloquear: boolean): Promise<{ error?: string }> => {
+    try {
+      const token = await getAuthToken();
+      const res = await fetch(`/api/usuarios/${uid}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ bloqueado: bloquear }),
+      });
+      const data = await res.json();
+      if (!res.ok) return { error: data.error || 'Error al actualizar usuario' };
+      return {};
+    } catch (err: any) {
+      return { error: err.message };
+    }
+  }, []);
+
+  const actualizarRolUsuario = useCallback(async (uid: string, rol: RolUsuario): Promise<{ error?: string }> => {
+    try {
+      const token = await getAuthToken();
+      const res = await fetch(`/api/usuarios/${uid}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ rol }),
+      });
+      const data = await res.json();
+      if (!res.ok) return { error: data.error || 'Error al actualizar usuario' };
+      return {};
+    } catch (err: any) {
+      return { error: err.message };
+    }
+  }, []);
+
+  const eliminarUsuarioFn = useCallback(async (uid: string): Promise<{ error?: string }> => {
+    try {
+      const token = await getAuthToken();
+      const res = await fetch(`/api/usuarios/${uid}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) return { error: data.error || 'Error al eliminar usuario' };
+      return {};
+    } catch (err: any) {
+      return { error: err.message };
+    }
+  }, []);
+
+  const editarUsuarioFn = useCallback(async (uid: string, datos: { email?: string; password?: string; rol?: RolUsuario }): Promise<{ error?: string }> => {
+    try {
+      const token = await getAuthToken();
+      const res = await fetch(`/api/usuarios/${uid}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(datos),
+      });
+      const data = await res.json();
+      if (!res.ok) return { error: data.error || 'Error al editar usuario' };
+      return {};
+    } catch (err: any) {
+      return { error: err.message };
+    }
+  }, []);
+
+  const cambiarContrasenaFn = useCallback(async (uid: string, password: string): Promise<{ error?: string }> => {
+    try {
+      const token = await getAuthToken();
+      const res = await fetch(`/api/usuarios/${uid}/cambiar-contrasena`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ password }),
+      });
+      const data = await res.json();
+      if (!res.ok) return { error: data.error || 'Error al cambiar contraseña' };
+      return {};
+    } catch (err: any) {
+      return { error: err.message };
+    }
+  }, []);
+
   // 5. Cargar Tasa BCV Oficial
   useEffect(() => {
     const fetchTasa = async () => {
@@ -207,10 +378,12 @@ export function TiendaProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <TiendaContext.Provider value={{ 
-      isOffline, user, authLoading, 
+      isOffline, user, authLoading, rol, rolLoading, bloqueado, primerInicio,
       productos, loadingProductos,
       agregarProducto, actualizarProducto, eliminarProducto,
       ventas, gastos, registrarVenta, registrarGasto, anularVenta,
+      usuarios, loadingUsuarios,
+      crearUsuario, editarUsuario: editarUsuarioFn, cambiarContrasena: cambiarContrasenaFn, alternarBloqueoUsuario, actualizarRolUsuario, eliminarUsuario: eliminarUsuarioFn,
       tasaBCV, fechaTasaBCV, loadingTasa
     }}>
       {children}

@@ -8,8 +8,9 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
   const pathname = usePathname();
   const isLoginPage = pathname === '/login';
   const isBloqueado = pathname === '/bloqueado';
+  const isCambiarContrasena = pathname === '/cambiar-contrasena';
 
-  if (isLoginPage || isBloqueado) {
+  if (isLoginPage || isBloqueado || isCambiarContrasena) {
     return <main className="flex-1 min-h-screen relative overflow-hidden">{children}</main>;
   }
 

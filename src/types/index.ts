@@ -42,3 +42,14 @@ export interface GastoOperativo {
   categoria: CategoriaGasto;
   fecha: string;        // ISO String
 }
+
+export type RolUsuario = 'admin' | 'operador';
+
+export interface Usuario {
+  uid: string;
+  email: string;
+  rol: RolUsuario;
+  bloqueado: boolean;
+  primerInicio: boolean;
+  creadoEn: string;
+}

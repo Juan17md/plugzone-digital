@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, PackageSearch, CircleDollarSign, History, LogOut, Sun, Moon } from 'lucide-react';
+import { LayoutDashboard, PackageSearch, CircleDollarSign, History, Users, LogOut, Sun, Moon } from 'lucide-react';
 import { getAuth, signOut } from 'firebase/auth';
 import { app } from '@/services/firebase';
 import { useTheme } from '@/components/providers/ThemeProvider';
@@ -18,7 +18,7 @@ const navItems = [
 export default function Sidebar() {
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
-  const { tasaBCV, fechaTasaBCV, loadingTasa, isOffline } = useTienda();
+  const { tasaBCV, fechaTasaBCV, loadingTasa, isOffline, rol } = useTienda();
 
   const handleLogout = async () => {
     try {
@@ -61,6 +61,20 @@ export default function Sidebar() {
             </Link>
           );
         })}
+
+        {rol === 'admin' && (
+          <Link 
+            href="/usuarios"
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors ${
+              pathname.startsWith('/usuarios')
+                ? 'bg-electric-cyan/10 text-electric-cyan' 
+                : 'text-muted-gray hover:text-polar-white hover:bg-white/5'
+            }`}
+          >
+            <Users size={20} />
+            Usuarios
+          </Link>
+        )}
       </nav>
 
       {/* Tasa BCV Widget */}
