@@ -28,7 +28,7 @@ export default function BloqueadoPage() {
             </div>
             <div>
               <p className="text-xs text-muted-gray font-medium uppercase tracking-wider">Teléfono</p>
-              <p className="text-sm text-polar-white font-bold">+58 412-1234567</p>
+              <p className="text-sm text-polar-white font-bold">+58 424-5323388</p>
             </div>
           </div>
 
@@ -38,7 +38,7 @@ export default function BloqueadoPage() {
             </div>
             <div>
               <p className="text-xs text-muted-gray font-medium uppercase tracking-wider">Correo Electrónico</p>
-              <p className="text-sm text-polar-white font-bold">soporte@plugzone.com</p>
+              <p className="text-sm text-polar-white font-bold">juan9182morales@gmail.com</p>
             </div>
           </div>
 
@@ -48,7 +48,7 @@ export default function BloqueadoPage() {
             </div>
             <div>
               <p className="text-xs text-muted-gray font-medium uppercase tracking-wider">WhatsApp</p>
-              <p className="text-sm text-polar-white font-bold">+58 412-1234567</p>
+              <p className="text-sm text-polar-white font-bold">+58 424-5323388</p>
             </div>
           </div>
         </div>
