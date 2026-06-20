@@ -14,11 +14,6 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const [suscripcionActiva, setSuscripcionActiva] = useState(true);
 
   useEffect(() => {
-    if (!user) {
-      setSuscripcionLoading(false);
-      return;
-    }
-
     const verificarSuscripcion = async () => {
       try {
         const ref = doc(db, 'config', 'suscripcion');
@@ -36,17 +31,17 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     };
 
     verificarSuscripcion();
-  }, [user]);
+  }, []);
 
   useEffect(() => {
     if (authLoading || suscripcionLoading) return;
 
-    if (!user) {
+    if (!suscripcionActiva && pathname !== '/bloqueado') {
+      router.push('/bloqueado');
+    } else if (!user) {
       if (pathname !== '/login') router.push('/login');
     } else if (pathname === '/login') {
       router.push('/dashboard');
-    } else if (!suscripcionActiva && pathname !== '/bloqueado') {
-      router.push('/bloqueado');
     }
   }, [user, authLoading, suscripcionLoading, suscripcionActiva, pathname, router]);
 
@@ -56,6 +51,10 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
         <div className="w-12 h-12 border-4 border-white/10 border-t-electric-cyan rounded-full animate-spin"></div>
       </div>
     );
+  }
+
+  if (!suscripcionActiva && pathname !== '/bloqueado') {
+    return null;
   }
 
   if (!user && pathname !== '/login') {
