@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
-import { app } from '@/services/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { app, db } from '@/services/firebase';
 import { Lock, Mail, Key, Eye, EyeOff } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from '@/components/providers/ThemeProvider';
@@ -24,7 +25,12 @@ export default function LoginPage() {
     try {
       const auth = getAuth(app);
       await signInWithEmailAndPassword(auth, email, password);
-      router.push('/dashboard');
+
+      const ref = doc(db, 'config', 'suscripcion');
+      const snap = await getDoc(ref);
+      const activa = snap.exists() ? snap.data().activa !== false : true;
+
+      router.push(activa ? '/dashboard' : '/bloqueado');
     } catch (err: any) {
       console.error(err);
       setError('Credenciales inválidas. Solo el propietario tiene acceso.');
