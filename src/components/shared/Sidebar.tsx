@@ -33,9 +33,11 @@ export default function Sidebar() {
     <aside className="hidden md:flex flex-col w-64 h-screen sticky top-0 bg-[var(--glass-bg)] border-r border-[var(--glass-border)] backdrop-blur-2xl shadow-2xl z-50">
       {/* Logo Area */}
       <div className="p-6 flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-electric-cyan to-blue-600 flex items-center justify-center box-glow-cyan">
-          <span className="font-space-grotesk font-bold text-cosmic-midnight">PZ</span>
-        </div>
+        <img
+          src="https://ik.imagekit.io/h5w0cdkit/plugzone/icono_sin_fondo_e9DNtxsHd.PNG"
+          alt="PlugZone Logo"
+          className="w-auto h-9 rounded-lg object-contain"
+        />
         <div>
           <h1 className="font-plus-jakarta font-bold text-lg text-polar-white tracking-tight leading-none">PlugZone</h1>
           <p className="text-xs text-electric-cyan font-medium">Digital Admin</p>

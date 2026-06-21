@@ -173,6 +173,7 @@ export default function InventarioPage() {
         onClose={() => setIsModalOpen(false)} 
         productoEditar={productoEnEdicion}
         activeTab={activeTab}
+        onNotify={setToastMessage}
       />
 
       {/* Modal de Confirmación de Eliminación */}

@@ -10,11 +10,12 @@ interface Props {
   onClose: () => void;
   productoEditar?: Producto | null;
   activeTab?: 'Telefonos' | 'Accesorios';
+  onNotify?: (mensaje: { title: string; type: 'success' | 'error' }) => void;
 }
 
 const CATEGORIAS_ACCESORIOS: CategoriaProducto[] = ['Protectores', 'Cargadores', 'Auriculares', 'Otros'];
 
-export default function ProductModal({ isOpen, onClose, productoEditar, activeTab = 'Telefonos' }: Props) {
+export default function ProductModal({ isOpen, onClose, productoEditar, activeTab = 'Telefonos', onNotify }: Props) {
   const { agregarProducto, actualizarProducto, eliminarProducto } = useTienda();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -92,13 +93,15 @@ export default function ProductModal({ isOpen, onClose, productoEditar, activeTa
     try {
       if (productoEditar) {
         await actualizarProducto(productoEditar.id, dataAProcesar);
+        onNotify?.({ title: 'Producto actualizado exitosamente', type: 'success' });
       } else {
         await agregarProducto(dataAProcesar);
+        onNotify?.({ title: 'Producto creado exitosamente', type: 'success' });
       }
       onClose();
     } catch (error) {
       console.error("Error guardando producto:", error);
-      alert("Hubo un error al guardar. Revisa tu conexión y que tus reglas de Firestore permitan escribir.");
+      onNotify?.({ title: 'Error al guardar. Revisa la conexión y las reglas de Firestore.', type: 'error' });
     } finally {
       setIsSubmitting(false);
     }
@@ -154,46 +157,53 @@ export default function ProductModal({ isOpen, onClose, productoEditar, activeTa
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-muted-gray">SKU</label>
+                <input type="text" value={formData.sku} onChange={e => setFormData({...formData, sku: e.target.value})} className={inputClass} placeholder="Auto-generado: PZ-XXXXXX" />
+              </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-muted-gray">Marca</label>
                 <input required type="text" value={formData.marca} onChange={e => setFormData({...formData, marca: e.target.value})} className={inputClass} placeholder="Apple" />
               </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               
               {formData.categoria === 'Teléfonos' ? (
                 <>
                   <div className="space-y-1.5">
                     <label className="text-sm font-medium text-muted-gray">Memoria RAM</label>
-                    <select value={formData.ram} onChange={e => setFormData({...formData, ram: e.target.value})} className={`${inputClass} appearance-none`}>
-                      <option value="">Seleccionar</option>
-                      <option value="2GB">2 GB</option>
-                      <option value="3GB">3 GB</option>
-                      <option value="4GB">4 GB</option>
-                      <option value="6GB">6 GB</option>
-                      <option value="8GB">8 GB</option>
-                      <option value="12GB">12 GB</option>
-                      <option value="16GB">16 GB</option>
-                      <option value="24GB">24 GB</option>
+                    <select value={formData.ram} onChange={e => setFormData({...formData, ram: e.target.value})} className={`${inputClass} appearance-none bg-cosmic-midnight`}>
+                      <option value="" className="bg-cosmic-midnight text-polar-white">Seleccionar</option>
+                      <option value="2GB" className="bg-cosmic-midnight text-polar-white">2 GB</option>
+                      <option value="3GB" className="bg-cosmic-midnight text-polar-white">3 GB</option>
+                      <option value="4GB" className="bg-cosmic-midnight text-polar-white">4 GB</option>
+                      <option value="6GB" className="bg-cosmic-midnight text-polar-white">6 GB</option>
+                      <option value="8GB" className="bg-cosmic-midnight text-polar-white">8 GB</option>
+                      <option value="12GB" className="bg-cosmic-midnight text-polar-white">12 GB</option>
+                      <option value="16GB" className="bg-cosmic-midnight text-polar-white">16 GB</option>
+                      <option value="24GB" className="bg-cosmic-midnight text-polar-white">24 GB</option>
                     </select>
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-sm font-medium text-muted-gray">Almacenamiento</label>
-                    <select value={formData.almacenamiento} onChange={e => setFormData({...formData, almacenamiento: e.target.value})} className={`${inputClass} appearance-none`}>
-                      <option value="">Seleccionar</option>
-                      <option value="32GB">32 GB</option>
-                      <option value="64GB">64 GB</option>
-                      <option value="128GB">128 GB</option>
-                      <option value="256GB">256 GB</option>
-                      <option value="512GB">512 GB</option>
-                      <option value="1TB">1 TB</option>
+                    <select value={formData.almacenamiento} onChange={e => setFormData({...formData, almacenamiento: e.target.value})} className={`${inputClass} appearance-none bg-cosmic-midnight`}>
+                      <option value="" className="bg-cosmic-midnight text-polar-white">Seleccionar</option>
+                      <option value="32GB" className="bg-cosmic-midnight text-polar-white">32 GB</option>
+                      <option value="64GB" className="bg-cosmic-midnight text-polar-white">64 GB</option>
+                      <option value="128GB" className="bg-cosmic-midnight text-polar-white">128 GB</option>
+                      <option value="256GB" className="bg-cosmic-midnight text-polar-white">256 GB</option>
+                      <option value="512GB" className="bg-cosmic-midnight text-polar-white">512 GB</option>
+                      <option value="1TB" className="bg-cosmic-midnight text-polar-white">1 TB</option>
                     </select>
                   </div>
                 </>
               ) : (
                 <div className="space-y-1.5 sm:col-span-2">
                   <label className="text-sm font-medium text-muted-gray">Categoría</label>
-                  <select value={formData.categoria} onChange={e => setFormData({...formData, categoria: e.target.value as CategoriaProducto})} className={`${inputClass} appearance-none`}>
-                    {opcionesCategoria.map(c => <option key={c} value={c}>{c}</option>)}
+                  <select value={formData.categoria} onChange={e => setFormData({...formData, categoria: e.target.value as CategoriaProducto})} className={`${inputClass} appearance-none bg-cosmic-midnight`}>
+                    {opcionesCategoria.map(c => <option key={c} value={c} className="bg-cosmic-midnight text-polar-white">{c}</option>)}
                   </select>
                 </div>
               )}

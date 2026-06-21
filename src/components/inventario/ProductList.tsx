@@ -1,8 +1,7 @@
 'use client';
 
 import { Producto } from '@/types';
-import { useState } from 'react';
-import { PackageOpen, Edit3, Smartphone, Headphones, Zap, Shield, Search, Trash2 } from 'lucide-react';
+import { PackageOpen, Edit3, Smartphone, Headphones, Zap, Shield, Trash2 } from 'lucide-react';
 
 interface Props {
   productos: Producto[];
@@ -109,7 +108,7 @@ export default function ProductList({ productos, loading, onEdit, onDelete }: Pr
             </thead>
             <tbody className="divide-y divide-white/5">
               {productos.map(p => (
-                <tr key={p.id} className="hover:bg-white/5 transition-colors group">
+                <tr key={p.id} className="hover:bg-white/5 transition-colors">
                   <td className="p-4">
                     <p className="font-bold text-polar-white">{p.nombre}</p>
                     <p className="text-xs text-muted-gray">
@@ -134,7 +133,7 @@ export default function ProductList({ productos, loading, onEdit, onDelete }: Pr
                     </span>
                   </td>
                   <td className="p-4 text-right">
-                    <div className="flex items-center justify-end gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center justify-end gap-2">
                       <button 
                         onClick={() => onEdit(p)}
                         className="p-2 inline-flex items-center justify-center rounded-lg text-muted-gray hover:text-electric-cyan hover:bg-electric-cyan/10 transition-colors"

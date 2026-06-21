@@ -47,9 +47,11 @@ export default function LoginPage() {
       
       <div className="glass-panel w-full max-w-md rounded-2xl sm:rounded-3xl p-6 sm:p-8 relative z-10 shadow-2xl">
         <div className="flex flex-col items-center text-center mb-8 sm:mb-10">
-          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-electric-cyan to-blue-600 flex items-center justify-center box-glow-cyan mb-4 sm:mb-5 shadow-lg shadow-electric-cyan/20">
-            <span className="font-space-grotesk font-bold text-xl sm:text-2xl text-white">PZ</span>
-          </div>
+          <img
+            src="https://ik.imagekit.io/h5w0cdkit/plugzone/icono_con_fondo_Mjd1-WmZc.jpeg"
+            alt="PlugZone Logo"
+            className="w-auto h-24 sm:h-28 mb-4 sm:mb-5 object-contain"
+          />
           <h1 className="font-plus-jakarta font-bold text-2xl sm:text-3xl text-polar-white tracking-tight">PlugZone Admin</h1>
           <p className="text-sm text-muted-gray mt-2 font-medium">Ingresa tus credenciales de propietario</p>
         </div>
