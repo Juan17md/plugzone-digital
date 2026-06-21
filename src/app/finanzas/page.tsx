@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import { useTienda } from '@/context/TiendaContext';
 import NuevaVentaModal from '@/components/finanzas/NuevaVentaModal';
 import NuevoGastoModal from '@/components/finanzas/NuevoGastoModal';
+import ChartsFinanzas from '@/components/finanzas/ChartsFinanzas';
 import { ShoppingCart, Receipt, TrendingUp, TrendingDown, DollarSign, Wallet } from 'lucide-react';
 
 export default function FinanzasPage() {
@@ -133,11 +134,8 @@ export default function FinanzasPage() {
 
       </div>
 
-      <div className="mt-6 md:mt-8">
-        <p className="text-xs sm:text-sm text-muted-gray text-center max-w-lg mx-auto">
-          Los gráficos detallados y reportes avanzados se diseñarán en las iteraciones futuras, la prioridad actual es que asientes todas tus ventas y gastos diarios.
-        </p>
-      </div>
+      {/* Charts */}
+      <ChartsFinanzas ventas={ventas} />
 
       <NuevaVentaModal isOpen={modalVentaOpen} onClose={() => setModalVentaOpen(false)} />
       <NuevoGastoModal isOpen={modalGastoOpen} onClose={() => setModalGastoOpen(false)} />
