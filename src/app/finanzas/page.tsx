@@ -5,7 +5,7 @@ import { useTienda } from '@/context/TiendaContext';
 import NuevaVentaModal from '@/components/finanzas/NuevaVentaModal';
 import NuevoGastoModal from '@/components/finanzas/NuevoGastoModal';
 import ChartsFinanzas from '@/components/finanzas/ChartsFinanzas';
-import { ShoppingCart, Receipt, TrendingUp, TrendingDown, DollarSign, Wallet, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ShoppingCart, Receipt, TrendingUp, TrendingDown, DollarSign, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getInicioSemana, getFinSemana, getSemanaAnterior, getSemanaSiguiente, formatearSemana, esSemanaActual } from '@/utils/fechas';
 
 export default function FinanzasPage() {
@@ -84,21 +84,24 @@ export default function FinanzasPage() {
           <ChevronLeft size={20} />
         </button>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col items-center gap-1">
+          {!noEsSemanaActual && (
+            <span className="text-[10px] font-bold text-cashflow-emerald bg-cashflow-emerald/10 px-2 py-0.5 rounded-md tracking-wide">Semana Actual</span>
+          )}
           <span className="font-plus-jakarta font-bold text-base text-polar-white">{formatearSemana(semanaSeleccionada)}</span>
           {noEsSemanaActual && (
             <button
               onClick={irSemanaActual}
-              className="text-xs font-bold text-electric-cyan bg-electric-cyan/10 px-3 py-1.5 rounded-lg hover:bg-electric-cyan/20 transition-colors"
+              className="text-[10px] font-bold text-electric-cyan bg-electric-cyan/10 px-2.5 py-1 rounded-md hover:bg-electric-cyan/20 transition-colors tracking-wide"
             >
-              Semana Actual
+              ← Volver a Semana Actual
             </button>
           )}
         </div>
 
         <button
           onClick={semanaSiguiente}
-          disabled={noEsSemanaActual && esSemanaActual(getSemanaSiguiente(semanaSeleccionada))}
+          disabled={esSemanaActual(semanaSeleccionada)}
           className="p-2 rounded-lg hover:bg-white/5 text-muted-gray hover:text-polar-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
           aria-label="Semana siguiente"
         >
@@ -107,23 +110,7 @@ export default function FinanzasPage() {
       </div>
 
       {/* Grid de KPIs Financieros */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-
-        {/* Balance Puro */}
-        <div className="col-span-2 lg:col-span-1 glass-panel p-5 md:p-6 rounded-2xl relative overflow-hidden group">
-          <div className={`absolute top-0 right-0 w-24 h-24 rounded-full blur-3xl opacity-20 transition-all ${finanzas.balancePuro >= 0 ? 'bg-cashflow-emerald' : 'bg-alert-coral'}`}></div>
-          <div className="flex items-start justify-between relative z-10">
-            <div className="min-w-0">
-              <p className="text-xs sm:text-sm font-medium text-muted-gray mb-1">Caja Libre (Semana)</p>
-              <h3 className={`font-space-grotesk font-bold text-2xl sm:text-3xl truncate ${finanzas.balancePuro >= 0 ? 'text-polar-white' : 'text-alert-coral'}`}>
-                ${finanzas.balancePuro.toFixed(2)}
-              </h3>
-            </div>
-            <div className={`p-2.5 sm:p-3 rounded-xl shrink-0 ml-3 ${finanzas.balancePuro >= 0 ? 'bg-white/5 text-polar-white' : 'bg-alert-coral/10 text-alert-coral'}`}>
-              <Wallet size={18} />
-            </div>
-          </div>
-        </div>
+      <div className="grid grid-cols-3 gap-3 md:gap-4">
 
         {/* Ingresos Brutos */}
         <div className="glass-panel p-5 md:p-6 rounded-2xl">

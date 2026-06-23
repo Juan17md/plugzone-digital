@@ -45,7 +45,7 @@ export function CrearUsuarioModal({ abierto, onCerrar, onExito, onError }: Props
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="glass-panel w-full max-w-md rounded-2xl p-6 space-y-5 relative">
+      <div className="glass-panel w-full max-w-lg rounded-2xl p-6 space-y-5 relative">
         {/* Cabecera */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
