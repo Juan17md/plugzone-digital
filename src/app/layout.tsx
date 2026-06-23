@@ -16,7 +16,8 @@ export const metadata: Metadata = {
   description: 'Sistema administrativo y control de inventario/ventas',
   appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'PlugZone Digital' },
   icons: {
-    apple: 'https://ik.imagekit.io/h5w0cdkit/plugzone/icono_con_fondo_Mjd1-WmZc.jpeg',
+    icon: 'https://ik.imagekit.io/h5w0cdkit/plugzone/icono_sin_fondo_e9DNtxsHd.PNG',
+    apple: 'https://ik.imagekit.io/h5w0cdkit/plugzone/icono_sin_fondo_e9DNtxsHd.PNG',
   },
 };
 

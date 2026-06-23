@@ -48,7 +48,7 @@ export default function LoginPage() {
       <div className="glass-panel w-full max-w-md rounded-2xl sm:rounded-3xl p-6 sm:p-8 relative z-10 shadow-2xl">
         <div className="flex flex-col items-center text-center mb-8 sm:mb-10">
           <img
-            src="https://ik.imagekit.io/h5w0cdkit/plugzone/icono_con_fondo_Mjd1-WmZc.jpeg"
+            src="https://ik.imagekit.io/h5w0cdkit/plugzone/icono_sin_fondo_e9DNtxsHd.PNG"
             alt="PlugZone Logo"
             className="w-auto h-24 sm:h-28 mb-4 sm:mb-5 object-contain"
           />
