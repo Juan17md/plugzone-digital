@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useTienda } from '@/context/TiendaContext';
 import { X, Receipt } from 'lucide-react';
+import Select from '@/components/shared/Select';
 
 interface Props {
   isOpen: boolean;
@@ -71,16 +72,21 @@ export default function NuevoGastoModal({ isOpen, onClose }: Props) {
               </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-muted-gray">Categoría</label>
-                <select value={formData.categoria} onChange={e => setFormData({...formData, categoria: e.target.value as any})} className="w-full bg-cosmic-midnight border border-white/10 rounded-xl px-4 py-3 text-polar-white focus:outline-none focus:border-alert-coral appearance-none transition-all">
-                  <option value="Suministros">Suministros</option>
-                  <option value="Alquiler">Alquiler</option>
-                  <option value="Sueldos">Sueldos</option>
-                  <option value="Servicios">Servicios Básicos</option>
-                  <option value="Publicidad">Publicidad</option>
-                  <option value="Reparaciones">Reparaciones</option>
-                  <option value="Envíos">Envíos / Delivery</option>
-                  <option value="Otros">Otros</option>
-                </select>
+                <Select
+                  value={formData.categoria}
+                  onChange={v => setFormData({...formData, categoria: v as any})}
+                  options={[
+                    { value: 'Suministros', label: 'Suministros' },
+                    { value: 'Alquiler', label: 'Alquiler' },
+                    { value: 'Sueldos', label: 'Sueldos' },
+                    { value: 'Servicios', label: 'Servicios Básicos' },
+                    { value: 'Publicidad', label: 'Publicidad' },
+                    { value: 'Reparaciones', label: 'Reparaciones' },
+                    { value: 'Envíos', label: 'Envíos / Delivery' },
+                    { value: 'Otros', label: 'Otros' },
+                  ]}
+                  accentColor="coral"
+                />
               </div>
             </div>
             

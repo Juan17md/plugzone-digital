@@ -6,6 +6,7 @@ import { Producto, CategoriaProducto } from '@/types';
 import ProductList from '@/components/inventario/ProductList';
 import ProductModal from '@/components/inventario/ProductModal';
 import { Plus, Search, Filter, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import Select from '@/components/shared/Select';
 
 export default function InventarioPage() {
   const { productos, loadingProductos, eliminarProducto } = useTienda();
@@ -139,21 +140,19 @@ export default function InventarioPage() {
         {activeTab === 'Accesorios' && (
           <>
             <div className="w-full h-px bg-white/10 sm:hidden" />
-            <div className="relative sm:w-56">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-muted-gray">
-                <Filter size={18} />
-              </div>
-              <select 
+            <div className="sm:w-56">
+              <Select
                 value={selectedCategoria}
-                onChange={(e) => setSelectedCategoria(e.target.value as CategoriaProducto | 'Todas')}
-                className="w-full bg-transparent text-polar-white pl-11 pr-4 py-3 min-h-[44px] rounded-lg appearance-none focus:outline-none focus:bg-[var(--glass-border)] transition-colors cursor-pointer"
-              >
-                <option value="Todas">Todas las Categorías</option>
-                <option value="Protectores">Protectores</option>
-                <option value="Cargadores">Cargadores</option>
-                <option value="Auriculares">Auriculares</option>
-                <option value="Otros">Otros</option>
-              </select>
+                onChange={v => setSelectedCategoria(v as CategoriaProducto | 'Todas')}
+                icon={<Filter size={18} />}
+                options={[
+                  { value: 'Todas', label: 'Todas las Categorías' },
+                  { value: 'Protectores', label: 'Protectores' },
+                  { value: 'Cargadores', label: 'Cargadores' },
+                  { value: 'Auriculares', label: 'Auriculares' },
+                  { value: 'Otros', label: 'Otros' },
+                ]}
+              />
             </div>
           </>
         )}

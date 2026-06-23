@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Producto, CategoriaProducto } from '@/types';
 import { useTienda } from '@/context/TiendaContext';
 import { X, Save, Trash2 } from 'lucide-react';
+import Select from '@/components/shared/Select';
 
 interface Props {
   isOpen: boolean;
@@ -174,37 +175,47 @@ export default function ProductModal({ isOpen, onClose, productoEditar, activeTa
                 <>
                   <div className="space-y-1.5">
                     <label className="text-sm font-medium text-muted-gray">Memoria RAM</label>
-                    <select value={formData.ram} onChange={e => setFormData({...formData, ram: e.target.value})} className={`${inputClass} appearance-none bg-cosmic-midnight`}>
-                      <option value="" className="bg-cosmic-midnight text-polar-white">Seleccionar</option>
-                      <option value="2GB" className="bg-cosmic-midnight text-polar-white">2 GB</option>
-                      <option value="3GB" className="bg-cosmic-midnight text-polar-white">3 GB</option>
-                      <option value="4GB" className="bg-cosmic-midnight text-polar-white">4 GB</option>
-                      <option value="6GB" className="bg-cosmic-midnight text-polar-white">6 GB</option>
-                      <option value="8GB" className="bg-cosmic-midnight text-polar-white">8 GB</option>
-                      <option value="12GB" className="bg-cosmic-midnight text-polar-white">12 GB</option>
-                      <option value="16GB" className="bg-cosmic-midnight text-polar-white">16 GB</option>
-                      <option value="24GB" className="bg-cosmic-midnight text-polar-white">24 GB</option>
-                    </select>
+                    <Select
+                      value={formData.ram}
+                      onChange={v => setFormData({...formData, ram: v})}
+                      options={[
+                        { value: '2GB', label: '2 GB' },
+                        { value: '3GB', label: '3 GB' },
+                        { value: '4GB', label: '4 GB' },
+                        { value: '6GB', label: '6 GB' },
+                        { value: '8GB', label: '8 GB' },
+                        { value: '12GB', label: '12 GB' },
+                        { value: '16GB', label: '16 GB' },
+                        { value: '24GB', label: '24 GB' },
+                      ]}
+                      placeholder="Seleccionar"
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-sm font-medium text-muted-gray">Almacenamiento</label>
-                    <select value={formData.almacenamiento} onChange={e => setFormData({...formData, almacenamiento: e.target.value})} className={`${inputClass} appearance-none bg-cosmic-midnight`}>
-                      <option value="" className="bg-cosmic-midnight text-polar-white">Seleccionar</option>
-                      <option value="32GB" className="bg-cosmic-midnight text-polar-white">32 GB</option>
-                      <option value="64GB" className="bg-cosmic-midnight text-polar-white">64 GB</option>
-                      <option value="128GB" className="bg-cosmic-midnight text-polar-white">128 GB</option>
-                      <option value="256GB" className="bg-cosmic-midnight text-polar-white">256 GB</option>
-                      <option value="512GB" className="bg-cosmic-midnight text-polar-white">512 GB</option>
-                      <option value="1TB" className="bg-cosmic-midnight text-polar-white">1 TB</option>
-                    </select>
+                    <Select
+                      value={formData.almacenamiento}
+                      onChange={v => setFormData({...formData, almacenamiento: v})}
+                      options={[
+                        { value: '32GB', label: '32 GB' },
+                        { value: '64GB', label: '64 GB' },
+                        { value: '128GB', label: '128 GB' },
+                        { value: '256GB', label: '256 GB' },
+                        { value: '512GB', label: '512 GB' },
+                        { value: '1TB', label: '1 TB' },
+                      ]}
+                      placeholder="Seleccionar"
+                    />
                   </div>
                 </>
               ) : (
                 <div className="space-y-1.5 sm:col-span-2">
                   <label className="text-sm font-medium text-muted-gray">Categoría</label>
-                  <select value={formData.categoria} onChange={e => setFormData({...formData, categoria: e.target.value as CategoriaProducto})} className={`${inputClass} appearance-none bg-cosmic-midnight`}>
-                    {opcionesCategoria.map(c => <option key={c} value={c} className="bg-cosmic-midnight text-polar-white">{c}</option>)}
-                  </select>
+                  <Select
+                    value={formData.categoria}
+                    onChange={v => setFormData({...formData, categoria: v as CategoriaProducto})}
+                    options={opcionesCategoria.map(c => ({ value: c, label: c }))}
+                  />
                 </div>
               )}
             </div>

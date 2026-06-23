@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useTienda } from '@/context/TiendaContext';
 import { X, ShoppingCart, Search } from 'lucide-react';
+import Select from '@/components/shared/Select';
 
 interface Props {
   isOpen: boolean;
@@ -199,14 +200,19 @@ export default function NuevaVentaModal({ isOpen, onClose }: Props) {
 
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-muted-gray">Método de Pago</label>
-                  <select value={metodoPago} onChange={e => setMetodoPago(e.target.value as any)} className="w-full bg-cosmic-midnight border border-white/10 rounded-xl px-4 py-3 text-polar-white focus:outline-none focus:border-cashflow-emerald appearance-none transition-all">
-                    <option value="Efectivo">Efectivo ($)</option>
-                    <option value="Punto">Punto de Venta (BS)</option>
-                    <option value="Pago Móvil">Pago Móvil</option>
-                    <option value="Transferencia">Transferencia Bancaria</option>
-                    <option value="Zelle">Zelle</option>
-                    <option value="Tarjeta">Tarjeta de Débito</option>
-                  </select>
+                  <Select
+                    value={metodoPago}
+                    onChange={v => setMetodoPago(v as any)}
+                    options={[
+                      { value: 'Efectivo', label: 'Efectivo ($)' },
+                      { value: 'Punto', label: 'Punto de Venta (BS)' },
+                      { value: 'Pago Móvil', label: 'Pago Móvil' },
+                      { value: 'Transferencia', label: 'Transferencia Bancaria' },
+                      { value: 'Zelle', label: 'Zelle' },
+                      { value: 'Tarjeta', label: 'Tarjeta de Débito' },
+                    ]}
+                    accentColor="emerald"
+                  />
                 </div>
 
                 {/* Datos del Cliente (Opcional) */}
