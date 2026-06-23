@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { ChevronDown, Check } from 'lucide-react'
 
 type Option = { value: string; label: string }
@@ -42,20 +43,60 @@ export default function Select({
 }: SelectProps) {
   const [open, setOpen] = useState(false)
   const [focus, setFocus] = useState(false)
-  const containerRef = useRef<HTMLDivElement>(null)
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({})
+
+  const buttonRef = useRef<HTMLButtonElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const selectedIndex = options.findIndex(o => o.value === value)
   const selectedOption = options.find(o => o.value === value)
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        buttonRef.current &&
+        !buttonRef.current.contains(e.target as Node) &&
+        listRef.current &&
+        !listRef.current.contains(e.target as Node)
+      ) {
         setOpen(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  const updatePosition = useCallback(() => {
+    if (!open || !buttonRef.current) return
+    const rect = buttonRef.current.getBoundingClientRect()
+    const spaceBelow = window.innerHeight - rect.bottom
+    const dropdownHeight = Math.min(options.length * 49 + 8, 224)
+
+    if (spaceBelow >= dropdownHeight) {
+      setDropdownStyle({
+        position: 'fixed',
+        top: `${rect.bottom + 6}px`,
+        left: `${rect.left}px`,
+        width: `${rect.width}px`,
+      })
+    } else {
+      setDropdownStyle({
+        position: 'fixed',
+        bottom: `${window.innerHeight - rect.top + 6}px`,
+        left: `${rect.left}px`,
+        width: `${rect.width}px`,
+      })
+    }
+  }, [open, options.length])
+
+  useEffect(() => {
+    updatePosition()
+    window.addEventListener('scroll', updatePosition, true)
+    window.addEventListener('resize', updatePosition)
+    return () => {
+      window.removeEventListener('scroll', updatePosition, true)
+      window.removeEventListener('resize', updatePosition)
+    }
+  }, [updatePosition])
 
   function handleSelect(opt: Option) {
     onChange(opt.value)
@@ -103,8 +144,9 @@ export default function Select({
   }
 
   return (
-    <div ref={containerRef} className={`relative ${className}`}>
+    <div className={`relative ${className}`}>
       <button
+        ref={buttonRef}
         type="button"
         disabled={disabled}
         onClick={() => setOpen(prev => !prev)}
@@ -127,10 +169,17 @@ export default function Select({
         />
       </button>
 
-      {open && (
+      {open && createPortal(
         <div
           ref={listRef}
-          className="absolute z-50 mt-1.5 w-full min-w-[160px] bg-titanium-slate border border-white/10 rounded-xl shadow-2xl backdrop-blur-2xl overflow-y-auto max-h-56 animate-in fade-in slide-in-from-top-2 duration-150"
+          style={dropdownStyle}
+          className="z-[100] min-w-[160px] bg-titanium-slate border border-white/10 rounded-xl shadow-2xl backdrop-blur-2xl overflow-y-auto max-h-56 animate-in fade-in duration-150
+            [&::-webkit-scrollbar]:w-1.5
+            [&::-webkit-scrollbar-track]:bg-transparent
+            [&::-webkit-scrollbar-thumb]:bg-white/10
+            [&::-webkit-scrollbar-thumb]:rounded-full
+            [&::-webkit-scrollbar-thumb]:border-0
+            hover:[&::-webkit-scrollbar-thumb]:bg-white/20"
         >
           {options.length === 0 && (
             <div className="px-4 py-3 text-sm text-muted-gray text-center">Sin opciones</div>
@@ -155,7 +204,8 @@ export default function Select({
               </button>
             )
           })}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

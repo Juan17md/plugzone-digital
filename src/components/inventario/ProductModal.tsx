@@ -151,11 +151,9 @@ export default function ProductModal({ isOpen, onClose, productoEditar, activeTa
         <div className="overflow-y-auto p-5 md:p-6 pb-[calc(2rem+env(safe-area-inset-bottom))] md:pb-6">
           <form id="productForm" onSubmit={handleSubmit} className="space-y-5">
             
-            <div className="grid grid-cols-1 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-muted-gray">Nombre del Producto</label>
-                <input required type="text" value={formData.nombre} onChange={e => setFormData({...formData, nombre: e.target.value})} className={inputClass} placeholder={activeTab === 'Telefonos' ? "iPhone 15 Pro Max" : "Forro MagSafe iPhone 15"} />
-              </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-muted-gray">Nombre del Producto</label>
+              <input required type="text" value={formData.nombre} onChange={e => setFormData({...formData, nombre: e.target.value})} className={inputClass} placeholder={activeTab === 'Telefonos' ? "iPhone 15 Pro Max" : "Forro MagSafe iPhone 15"} />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -169,7 +167,7 @@ export default function ProductModal({ isOpen, onClose, productoEditar, activeTa
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className={`grid grid-cols-1 gap-4 ${formData.categoria === 'Teléfonos' ? 'sm:grid-cols-2' : ''}`}>
               
               {formData.categoria === 'Teléfonos' ? (
                 <>
@@ -209,7 +207,7 @@ export default function ProductModal({ isOpen, onClose, productoEditar, activeTa
                   </div>
                 </>
               ) : (
-                <div className="space-y-1.5 sm:col-span-2">
+                <div className="space-y-1.5">
                   <label className="text-sm font-medium text-muted-gray">Categoría</label>
                   <Select
                     value={formData.categoria}
