@@ -86,8 +86,17 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
   if (authLoading || suscripcionLoading || rolLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-cosmic-midnight">
-        <div className="w-12 h-12 border-4 border-white/10 border-t-electric-cyan rounded-full animate-spin"></div>
+      <div className="min-h-screen w-full flex flex-col items-center justify-center gap-6 bg-cosmic-midnight">
+        <img
+          src="https://ik.imagekit.io/h5w0cdkit/plugzone/icono_sin_fondo_e9DNtxsHd.PNG"
+          alt="Cargando..."
+          className="w-16 h-16 sm:w-20 sm:h-20 object-contain opacity-40 animate-pulse"
+        />
+        <div className="flex items-center gap-2 text-muted-gray">
+          <div className="w-2 h-2 rounded-full bg-electric-cyan animate-bounce [animation-delay:0ms]"></div>
+          <div className="w-2 h-2 rounded-full bg-electric-cyan animate-bounce [animation-delay:150ms]"></div>
+          <div className="w-2 h-2 rounded-full bg-electric-cyan animate-bounce [animation-delay:300ms]"></div>
+        </div>
       </div>
     );
   }
