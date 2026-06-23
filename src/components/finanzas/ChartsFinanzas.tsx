@@ -4,13 +4,16 @@ import { useMemo } from 'react'
 import { Venta } from '@/types'
 import { useTheme } from '@/components/providers/ThemeProvider'
 import {
-  LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell,
-  BarChart, Bar, CartesianGrid,
+  CartesianGrid,
 } from 'recharts'
+
+const DIAS_LABEL = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
 
 interface Props {
   ventas: Venta[]
+  semanaInicio?: Date
 }
 
 const METODO_COLORS: Record<string, string> = {
@@ -22,30 +25,34 @@ const METODO_COLORS: Record<string, string> = {
   Zelle: '#6366F1',
 }
 
-export default function ChartsFinanzas({ ventas }: Props) {
+export default function ChartsFinanzas({ ventas, semanaInicio }: Props) {
   const { theme } = useTheme()
 
-  const semanales = useMemo(() => {
-    const semanas: Record<string, number> = {}
-    const ahora = new Date()
-    const hace8semanas = new Date(ahora.getTime() - 56 * 24 * 60 * 60 * 1000)
-
+  const diarias = useMemo(() => {
+    if (!semanaInicio) return []
+    const totales = [0, 0, 0, 0, 0, 0, 0]
+    const inicioDia = (offset: number) => {
+      const d = new Date(semanaInicio)
+      d.setDate(d.getDate() + offset)
+      return d
+    }
     ventas.forEach(v => {
       const f = new Date(v.fecha)
-      if (f < hace8semanas) return
-      const inicioSemana = new Date(f)
-      inicioSemana.setDate(f.getDate() - f.getDay())
-      const key = inicioSemana.toISOString().slice(0, 10)
-      semanas[key] = (semanas[key] || 0) + v.cantidadVendida * v.precioVentaFinal
+      for (let i = 0; i < 7; i++) {
+        const diaInicio = inicioDia(i)
+        const diaFin = new Date(diaInicio)
+        diaFin.setHours(23, 59, 59, 999)
+        if (f >= diaInicio && f <= diaFin) {
+          totales[i] += v.cantidadVendida * v.precioVentaFinal
+          break
+        }
+      }
     })
-
-    return Object.entries(semanas)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([semana, total], i) => ({
-        semana: `Sem ${i + 1}`,
-        total: Math.round(total * 100) / 100,
-      }))
-  }, [ventas])
+    return DIAS_LABEL.map((dia, i) => ({
+      dia,
+      total: Math.round(totales[i] * 100) / 100,
+    }))
+  }, [ventas, semanaInicio])
 
   const metodosPago = useMemo(() => {
     const agrupado: Record<string, number> = {}
@@ -86,29 +93,29 @@ export default function ChartsFinanzas({ ventas }: Props) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
 
-      {/* Ventas Semanales — full width */}
+      {/* Ventas Diarias — full width */}
       <div className="lg:col-span-2 glass-panel p-5 md:p-6 rounded-2xl">
-        <h3 className="font-plus-jakarta font-bold text-lg text-polar-white mb-4">Ventas Semanales (últimas 8 semanas)</h3>
+        <h3 className="font-plus-jakarta font-bold text-lg text-polar-white mb-4">Ventas Diarias (Semana)</h3>
         <div className="h-72">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={semanales} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-              <XAxis dataKey="semana" tick={{ fill: 'var(--color-muted-gray)', fontSize: 12 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: 'var(--color-muted-gray)', fontSize: 12 }} axisLine={false} tickLine={false} />
-              <Tooltip
-                contentStyle={tooltipStyle}
-                labelStyle={{ color: 'var(--color-polar-white)' }}
-                formatter={(value) => [`$${Number(value).toFixed(2)}`, 'Ventas']}
-              />
-              <Line
-                type="monotone"
-                dataKey="total"
-                stroke="var(--color-electric-cyan)"
-                strokeWidth={2.5}
-                dot={{ fill: 'var(--color-electric-cyan)', strokeWidth: 0, r: 4 }}
-                activeDot={{ r: 6, fill: 'var(--color-electric-cyan)' }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          {diarias.some(d => d.total > 0) ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={diarias} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                <CartesianGrid stroke={gridStroke} vertical={false} />
+                <XAxis dataKey="dia" tick={{ fill: 'var(--color-muted-gray)', fontSize: 12 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: 'var(--color-muted-gray)', fontSize: 12 }} axisLine={false} tickLine={false} />
+                <Tooltip
+                  contentStyle={tooltipStyle}
+                  labelStyle={{ color: 'var(--color-polar-white)' }}
+                  formatter={(value) => [`$${Number(value).toFixed(2)}`, 'Ventas']}
+                />
+                <Bar dataKey="total" fill="var(--color-electric-cyan)" radius={[6, 6, 0, 0]} barSize={32} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <p className="text-muted-gray text-sm">Sin ventas en esta semana</p>
+            </div>
+          )}
         </div>
       </div>
 

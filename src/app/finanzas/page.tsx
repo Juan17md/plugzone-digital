@@ -5,50 +5,56 @@ import { useTienda } from '@/context/TiendaContext';
 import NuevaVentaModal from '@/components/finanzas/NuevaVentaModal';
 import NuevoGastoModal from '@/components/finanzas/NuevoGastoModal';
 import ChartsFinanzas from '@/components/finanzas/ChartsFinanzas';
-import { ShoppingCart, Receipt, TrendingUp, TrendingDown, DollarSign, Wallet } from 'lucide-react';
+import { ShoppingCart, Receipt, TrendingUp, TrendingDown, DollarSign, Wallet, ChevronLeft, ChevronRight } from 'lucide-react';
+import { getInicioSemana, getFinSemana, getSemanaAnterior, getSemanaSiguiente, formatearSemana, esSemanaActual } from '@/utils/fechas';
 
 export default function FinanzasPage() {
   const { ventas, gastos } = useTienda();
-  
+
   const [modalVentaOpen, setModalVentaOpen] = useState(false);
   const [modalGastoOpen, setModalGastoOpen] = useState(false);
+  const [semanaSeleccionada, setSemanaSeleccionada] = useState(() => getInicioSemana(new Date()));
 
-  // Cálculos Financieros del Mes Actual
+  const semanaAnterior = () => setSemanaSeleccionada(s => getSemanaAnterior(s));
+  const semanaSiguiente = () => setSemanaSeleccionada(s => getSemanaSiguiente(s));
+  const irSemanaActual = () => setSemanaSeleccionada(getInicioSemana(new Date()));
+
   const finanzas = useMemo(() => {
-    const ahora = new Date();
-    const mesActual = ahora.getMonth();
-    const anoActual = ahora.getFullYear();
+    const inicio = getInicioSemana(semanaSeleccionada);
+    const fin = getFinSemana(semanaSeleccionada);
 
-    const ventasDelMes = ventas.filter(v => {
+    const ventasDeSemana = ventas.filter(v => {
       const fecha = new Date(v.fecha);
-      return fecha.getMonth() === mesActual && fecha.getFullYear() === anoActual && !v.anulada;
+      return fecha >= inicio && fecha <= fin && !v.anulada;
     });
 
-    const gastosDelMes = gastos.filter(g => {
+    const gastosDeSemana = gastos.filter(g => {
       const fecha = new Date(g.fecha);
-      return fecha.getMonth() === mesActual && fecha.getFullYear() === anoActual;
+      return fecha >= inicio && fecha <= fin;
     });
 
-    const ingresosBrutos = ventasDelMes.reduce((acc, v) => acc + (v.precioVentaFinal * v.cantidadVendida), 0);
-    const gananciaNeta = ventasDelMes.reduce((acc, v) => acc + v.gananciaNeta, 0);
-    const totalGastos = gastosDelMes.reduce((acc, g) => acc + g.monto, 0);
+    const ingresosBrutos = ventasDeSemana.reduce((acc, v) => acc + (v.precioVentaFinal * v.cantidadVendida), 0);
+    const gananciaNeta = ventasDeSemana.reduce((acc, v) => acc + v.gananciaNeta, 0);
+    const totalGastos = gastosDeSemana.reduce((acc, g) => acc + g.monto, 0);
     const balancePuro = gananciaNeta - totalGastos;
 
-    return { ingresosBrutos, gananciaNeta, totalGastos, balancePuro, ventasDelMes, gastosDelMes };
-  }, [ventas, gastos]);
+    return { ingresosBrutos, gananciaNeta, totalGastos, balancePuro, ventasDeSemana, gastosDeSemana };
+  }, [ventas, gastos, semanaSeleccionada]);
+
+  const noEsSemanaActual = !esSemanaActual(semanaSeleccionada);
 
   return (
     <div className="space-y-4 md:space-y-6">
-      
+
       {/* Cabecera y Botones de Acción */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div className="min-w-0">
           <h2 className="font-plus-jakarta font-bold text-2xl sm:text-3xl text-polar-white">Finanzas</h2>
-          <p className="text-muted-gray mt-1 text-sm sm:text-base">Reporte operativo del mes actual.</p>
+          <p className="text-muted-gray mt-1 text-sm sm:text-base">Reporte operativo semanal.</p>
         </div>
-        
+
         <div className="flex gap-2 sm:gap-3">
-          <button 
+          <button
             onClick={() => setModalGastoOpen(true)}
             className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-alert-coral/10 text-alert-coral font-bold px-3 sm:px-5 py-3 rounded-xl hover:bg-alert-coral/20 active:scale-95 transition-all min-h-[44px] text-sm sm:text-base"
           >
@@ -56,8 +62,8 @@ export default function FinanzasPage() {
             <span className="hidden sm:inline">Nuevo Gasto</span>
             <span className="sm:hidden">Gasto</span>
           </button>
-          
-          <button 
+
+          <button
             onClick={() => setModalVentaOpen(true)}
             className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-cashflow-emerald text-white font-bold px-3 sm:px-5 py-3 rounded-xl shadow-lg shadow-cashflow-emerald/20 hover:scale-105 active:scale-95 transition-all min-h-[44px] text-sm sm:text-base"
           >
@@ -68,15 +74,47 @@ export default function FinanzasPage() {
         </div>
       </div>
 
+      {/* Selector de Semana */}
+      <div className="flex items-center justify-between glass-panel px-4 py-3 rounded-xl">
+        <button
+          onClick={semanaAnterior}
+          className="p-2 rounded-lg hover:bg-white/5 text-muted-gray hover:text-polar-white transition-colors"
+          aria-label="Semana anterior"
+        >
+          <ChevronLeft size={20} />
+        </button>
+
+        <div className="flex items-center gap-3">
+          <span className="font-plus-jakarta font-bold text-base text-polar-white">{formatearSemana(semanaSeleccionada)}</span>
+          {noEsSemanaActual && (
+            <button
+              onClick={irSemanaActual}
+              className="text-xs font-bold text-electric-cyan bg-electric-cyan/10 px-3 py-1.5 rounded-lg hover:bg-electric-cyan/20 transition-colors"
+            >
+              Semana Actual
+            </button>
+          )}
+        </div>
+
+        <button
+          onClick={semanaSiguiente}
+          disabled={noEsSemanaActual && esSemanaActual(getSemanaSiguiente(semanaSeleccionada))}
+          className="p-2 rounded-lg hover:bg-white/5 text-muted-gray hover:text-polar-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          aria-label="Semana siguiente"
+        >
+          <ChevronRight size={20} />
+        </button>
+      </div>
+
       {/* Grid de KPIs Financieros */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-        
-        {/* Balance Puro — Ocupa full width en móvil */}
+
+        {/* Balance Puro */}
         <div className="col-span-2 lg:col-span-1 glass-panel p-5 md:p-6 rounded-2xl relative overflow-hidden group">
           <div className={`absolute top-0 right-0 w-24 h-24 rounded-full blur-3xl opacity-20 transition-all ${finanzas.balancePuro >= 0 ? 'bg-cashflow-emerald' : 'bg-alert-coral'}`}></div>
           <div className="flex items-start justify-between relative z-10">
             <div className="min-w-0">
-              <p className="text-xs sm:text-sm font-medium text-muted-gray mb-1">Caja Libre (Mes)</p>
+              <p className="text-xs sm:text-sm font-medium text-muted-gray mb-1">Caja Libre (Semana)</p>
               <h3 className={`font-space-grotesk font-bold text-2xl sm:text-3xl truncate ${finanzas.balancePuro >= 0 ? 'text-polar-white' : 'text-alert-coral'}`}>
                 ${finanzas.balancePuro.toFixed(2)}
               </h3>
@@ -121,7 +159,7 @@ export default function FinanzasPage() {
         <div className="glass-panel p-5 md:p-6 rounded-2xl">
           <div className="flex items-start justify-between">
             <div className="min-w-0">
-              <p className="text-xs sm:text-sm font-medium text-muted-gray mb-1">Gastos Operativos</p>
+              <p className="text-xs sm:text-sm font-medium text-muted-gray mb-1">Gastos Totales</p>
               <h3 className="font-space-grotesk font-bold text-xl sm:text-2xl text-alert-coral truncate">
                 ${finanzas.totalGastos.toFixed(2)}
               </h3>
@@ -134,8 +172,8 @@ export default function FinanzasPage() {
 
       </div>
 
-      {/* Charts */}
-      <ChartsFinanzas ventas={ventas} />
+      {/* Charts - filtrados por semana */}
+      <ChartsFinanzas ventas={finanzas.ventasDeSemana} semanaInicio={getInicioSemana(semanaSeleccionada)} />
 
       <NuevaVentaModal isOpen={modalVentaOpen} onClose={() => setModalVentaOpen(false)} />
       <NuevoGastoModal isOpen={modalGastoOpen} onClose={() => setModalGastoOpen(false)} />
