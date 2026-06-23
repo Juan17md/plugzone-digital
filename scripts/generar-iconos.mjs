@@ -9,7 +9,7 @@ if (!existsSync(publicDir)) mkdirSync(publicDir, { recursive: true });
 
 const IMAGEN_ORIGEN = 'https://ik.imagekit.io/h5w0cdkit/plugzone/icono_sin_fondo_e9DNtxsHd.PNG';
 const FONDO = '#080C14';
-const PADDING_PCT = 0.22;
+const PADDING_PCT = 0.13;
 const TAMANOS = [48, 72, 96, 144, 192, 512];
 
 async function generarIcono(tamanio) {
