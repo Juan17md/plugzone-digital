@@ -110,7 +110,7 @@ export default function FinanzasPage() {
       </div>
 
       {/* Grid de KPIs Financieros */}
-      <div className="grid grid-cols-3 gap-3 md:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
 
         {/* Ingresos Brutos */}
         <div className="glass-panel p-5 md:p-6 rounded-2xl">
