@@ -36,17 +36,7 @@ export function formatearSemana(fecha: Date): string {
   const iniStr = inicio.toLocaleDateString(locale, opciones);
   const finStr = fin.toLocaleDateString(locale, opciones);
 
-  const numeroSemana = getNumeroSemana(inicio);
-
-  return `Semana ${numeroSemana} · ${iniStr} — ${finStr}`;
-}
-
-export function getNumeroSemana(fecha: Date): number {
-  const d = new Date(fecha);
-  d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7));
-  const semana1 = new Date(d.getFullYear(), 0, 4);
-  return 1 + Math.round(((d.getTime() - semana1.getTime()) / 86400000 - 3 + ((semana1.getDay() + 6) % 7)) / 7);
+  return `Semana del ${iniStr} al ${finStr}`;
 }
 
 export function esSemanaActual(fecha: Date): boolean {
