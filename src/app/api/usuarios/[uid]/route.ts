@@ -1,6 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { obtenerAdmin } from '@/services/firebase-admin';
 
+const ESPERAR_MS = 500;
+const REINTENTOS_MAX = 3;
+
+// Firebase Auth tiene consistencia eventual: un usuario recién creado puede
+// no estar aún propagado cuando se intenta eliminar de inmediato. Este helper
+// reintenta deleteUser con un pequeño backoff para evitar fallos transitorios.
+async function eliminarUsuarioDeAuthConReintento(uid: string) {
+  const admin = obtenerAdmin();
+  if (!admin) return;
+
+  for (let intento = 1; intento <= REINTENTOS_MAX; intento++) {
+    try {
+      await admin.auth.deleteUser(uid);
+      return;
+    } catch (error: any) {
+      const esUsuarioNoEncontrado = error?.code === 'auth/user-not-found';
+      const esUltimoIntento = intento === REINTENTOS_MAX;
+      if (esUsuarioNoEncontrado || esUltimoIntento) {
+        throw error;
+      }
+      await new Promise((resolve) => setTimeout(resolve, ESPERAR_MS * intento));
+    }
+  }
+}
+
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ uid: string }> }
@@ -97,7 +122,14 @@ export async function DELETE(
       return NextResponse.json({ error: 'No puedes eliminarte a ti mismo' }, { status: 400 });
     }
 
-    await admin.auth.deleteUser(uid);
+    try {
+      await eliminarUsuarioDeAuthConReintento(uid);
+    } catch (error: any) {
+      if (error?.code !== 'auth/user-not-found') {
+        throw error;
+      }
+      // Si el usuario ya no existe en Auth, se continúa para limpiar Firestore.
+    }
 
     await admin.db.collection('usuarios').doc(uid).delete();
 
