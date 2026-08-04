@@ -17,19 +17,19 @@
 }
 
 :root {
-  /* Modo Oscuro (Premium SaaS Minimalist) */
-  --color-cosmic-midnight: #020617; /* Slate 950 - Fondo ultraclara oscuro con toque azul */
-  --color-titanium-slate: #0F172A; /* Slate 900 - Base para paneles */
-  --color-polar-white: #F8FAFC; /* Slate 50 - Texto súper blanco y limpio */
-  --color-muted-gray: #64748B; /* Slate 500 - Texto secundario sutil pero legible */
+  /* Paleta Midnight Titanium (Design System Maestro) */
+  --color-cosmic-midnight: #080C14; /* Midnight Black - Fondo de toda la app */
+  --color-titanium-slate: #121A2C; /* Titanium Slate - Tarjetas, modales y barras */
+  --color-polar-white: #F1F5F9; /* Polar Slate - Títulos, precios y datos clave */
+  --color-muted-gray: #94A3B8; /* Muted Gray - Descripciones, marcas y fechas */
   
-  /* Acentos vibrantes y elegantes */
-  --color-electric-cyan: #0EA5E9; /* Sky 500 - Azul brillante, moderno y SaaS */
-  --color-neon-amber: #F59E0B; /* Amber 500 - Alertas/pendientes */
-  --color-cashflow-emerald: #10B981; /* Emerald 500 - Ingresos/Éxito */
-  --color-alert-coral: #EF4444; /* Red 500 - Errores/Falta de stock */
+  /* Acentos vibrantes tecnológicos */
+  --color-electric-cyan: #00F2FE; /* Electric Cyan - Enlaces y botones de acción */
+  --color-neon-amber: #FF9F43; /* Neon Amber - Stock crítico e indicadores */
+  --color-cashflow-emerald: #10B981; /* Cashflow Emerald - Ingresos y ganancias */
+  --color-alert-coral: #FF4949; /* Alert Coral - Gastos, errores y stock en 0 */
   
-  --glass-bg: rgba(15, 23, 42, 0.4); /* Fondo translúcido del panel oscuro */
+  --glass-bg: rgba(18, 26, 44, 0.4); /* Fondo translúcido Titanium Slate */
   --glass-border: rgba(255, 255, 255, 0.08); /* Borde súper sutil */
   --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); /* Sombra profunda para levantar el panel */
   
@@ -45,7 +45,7 @@
   --color-muted-gray: #475569; /* Slate 600 - Texto secundario perfecto */
   
   /* Acentos adaptados para excelente contraste (WCAG AA+) */
-  --color-electric-cyan: #0284C7; /* Sky 600 - Azul profundo para legibilidad sobre claro */
+  --color-electric-cyan: #0891B2; /* Cyan profundo para legibilidad sobre claro */
   --color-neon-amber: #D97706; /* Amber 600 */
   --color-cashflow-emerald: #059669; /* Emerald 600 */
   --color-alert-coral: #DC2626; /* Red 600 */
@@ -66,12 +66,12 @@ body {
   -moz-osx-font-smoothing: grayscale;
   transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   /* Un sutil mesh gradient en el fondo para evitar que se vea totalmente plano, pero que sigue la elegancia SaaS */
-  background-image: radial-gradient(circle at 50% -20%, rgba(14, 165, 233, 0.05) 0%, transparent 60%);
+  background-image: radial-gradient(circle at 50% -20%, rgba(0, 242, 254, 0.05) 0%, transparent 60%);
   background-attachment: fixed;
 }
 
 .light body {
-  background-image: radial-gradient(circle at 50% -20%, rgba(2, 132, 199, 0.03) 0%, transparent 60%);
+  background-image: radial-gradient(circle at 50% -20%, rgba(8, 145, 178, 0.03) 0%, transparent 60%);
 }
 
 /* Premium SaaS Glassmorphism Panel */
@@ -85,9 +85,9 @@ body {
 }
 
 @utility text-glow-cyan {
-  text-shadow: 0 0 16px rgba(14, 165, 233, 0.4);
+  text-shadow: 0 0 16px rgba(0, 242, 254, 0.4);
 }
 
 @utility box-glow-cyan {
-  box-shadow: 0 0 24px rgba(14, 165, 233, 0.15);
+  box-shadow: 0 0 24px rgba(0, 242, 254, 0.15);
 }

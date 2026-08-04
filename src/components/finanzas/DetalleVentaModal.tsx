@@ -1,7 +1,8 @@
 'use client';
 
-import { X, ReceiptText, Calendar, ArrowRightLeft, Ban, ShieldCheck, User, Phone, FileText, MapPin } from 'lucide-react';
-import { Venta } from '@/types';
+import { useEffect } from 'react';
+import { X, ReceiptText, Calendar, ArrowRightLeft, Ban, ShieldCheck, User, Phone, FileText, MapPin, Package } from 'lucide-react';
+import { Venta, esVentaMultiProducto, obtenerTotalVenta, obtenerCantidadTotal } from '@/types';
 
 interface Props {
   isOpen: boolean;
@@ -11,10 +12,23 @@ interface Props {
 }
 
 export default function DetalleVentaModal({ isOpen, onClose, venta, tasaBCV }: Props) {
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
   if (!isOpen || !venta) return null;
 
-  const totalUSD = venta.precioVentaFinal * venta.cantidadVendida;
+  const esMulti = esVentaMultiProducto(venta);
+  const totalUSD = obtenerTotalVenta(venta);
   const totalBS = tasaBCV ? totalUSD * tasaBCV : null;
+  const cantidadTotal = obtenerCantidadTotal(venta);
 
   const formatearFecha = (isoString: string) => {
     const fecha = new Date(isoString);
@@ -25,7 +39,7 @@ export default function DetalleVentaModal({ isOpen, onClose, venta, tasaBCV }: P
   };
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-end md:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-200">
+    <div role="dialog" aria-modal="true" aria-label="Detalle de venta" className="fixed inset-0 z-[80] flex items-end md:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-200">
       <div className="bg-titanium-slate w-full max-w-lg rounded-t-3xl md:rounded-3xl border border-[var(--glass-border)] shadow-[var(--glass-shadow)] overflow-hidden flex flex-col max-h-[85dvh] sm:max-h-[90vh]">
         
         <div className="p-5 md:p-6 border-b border-[var(--glass-border)] flex justify-between items-center bg-[var(--glass-bg)]">
@@ -33,7 +47,7 @@ export default function DetalleVentaModal({ isOpen, onClose, venta, tasaBCV }: P
             <ReceiptText size={24} />
             <h2 className="font-plus-jakarta text-xl font-bold text-polar-white">Detalle de Ticket</h2>
           </div>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10 text-muted-gray transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer">
+          <button onClick={onClose} aria-label="Cerrar detalle de venta" className="p-2 rounded-full hover:bg-white/10 text-muted-gray transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer">
             <X size={24} />
           </button>
         </div>
@@ -59,32 +73,81 @@ export default function DetalleVentaModal({ isOpen, onClose, venta, tasaBCV }: P
             )}
           </div>
 
-          {/* Información del Producto */}
+          {/* Información de Productos */}
           <div className="space-y-3">
-            <h3 className="text-xs font-bold text-muted-gray uppercase tracking-wider">Detalles del Producto</h3>
-            <div className="p-4 rounded-xl bg-cosmic-midnight/60 border border-white/5 space-y-3">
-              <div className="flex justify-between items-start gap-4">
-                <div>
-                  <p className="font-bold text-polar-white text-base leading-tight">{venta.nombreProducto}</p>
-                  <p className="text-xs text-muted-gray mt-1 font-space-grotesk">Cantidad: {venta.cantidadVendida} unidades</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-space-grotesk font-bold text-cashflow-emerald text-lg">${venta.precioVentaFinal.toFixed(2)} c/u</p>
+            <h3 className="text-xs font-bold text-muted-gray uppercase tracking-wider">
+              {esMulti ? `Productos (${cantidadTotal} unidades en ${venta.items!.length} artículos)` : 'Detalles del Producto'}
+            </h3>
+
+            {esMulti ? (
+              /* Vista multi-producto */
+              <div className="space-y-2">
+                {venta.items!.map((item, idx) => {
+                  const subtotalUSD = item.precioVentaFinal * item.cantidadVendida;
+                  return (
+                    <div key={idx} className="p-3 rounded-xl bg-cosmic-midnight/60 border border-white/5 flex justify-between items-center gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-8 h-8 rounded-lg bg-cashflow-emerald/10 text-cashflow-emerald flex items-center justify-center shrink-0">
+                          <Package size={14} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-bold text-sm text-polar-white leading-tight truncate">{item.nombreProducto}</p>
+                          <p className="text-[10px] text-muted-gray mt-0.5 font-space-grotesk">
+                            {item.cantidadVendida} × ${item.precioVentaFinal.toFixed(2)}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="font-space-grotesk font-bold text-cashflow-emerald text-sm">${subtotalUSD.toFixed(2)}</p>
+                        {tasaBCV && (
+                          <p className="text-[10px] text-muted-gray font-space-grotesk">
+                            Bs. {new Intl.NumberFormat('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(subtotalUSD * tasaBCV)}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* Total general */}
+                <div className="p-3 rounded-xl border border-cashflow-emerald/20 bg-cashflow-emerald/5 flex justify-between items-center">
+                  <p className="text-sm text-polar-white font-medium">Total de Venta:</p>
+                  <div className="text-right">
+                    <p className="font-space-grotesk font-bold text-polar-white text-xl">${totalUSD.toFixed(2)}</p>
+                    {totalBS && (
+                      <p className="text-xs text-muted-gray font-space-grotesk mt-0.5">
+                        Bs. {new Intl.NumberFormat('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(totalBS)}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
-              
-              <div className="border-t border-white/5 pt-3 flex justify-between items-center">
-                <p className="text-sm text-muted-gray">Total de Venta:</p>
-                <div className="text-right">
-                  <p className="font-space-grotesk font-bold text-polar-white text-xl">${totalUSD.toFixed(2)}</p>
-                  {totalBS && (
-                    <p className="text-xs text-muted-gray font-space-grotesk mt-0.5">
-                      Bs. {new Intl.NumberFormat('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(totalBS)}
-                    </p>
-                  )}
+            ) : (
+              /* Vista legacy (producto único) */
+              <div className="p-4 rounded-xl bg-cosmic-midnight/60 border border-white/5 space-y-3">
+                <div className="flex justify-between items-start gap-4">
+                  <div>
+                    <p className="font-bold text-polar-white text-base leading-tight">{venta.nombreProducto}</p>
+                    <p className="text-xs text-muted-gray mt-1 font-space-grotesk">Cantidad: {venta.cantidadVendida} unidades</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-space-grotesk font-bold text-cashflow-emerald text-lg">${venta.precioVentaFinal.toFixed(2)} c/u</p>
+                  </div>
+                </div>
+                
+                <div className="border-t border-white/5 pt-3 flex justify-between items-center">
+                  <p className="text-sm text-muted-gray">Total de Venta:</p>
+                  <div className="text-right">
+                    <p className="font-space-grotesk font-bold text-polar-white text-xl">${totalUSD.toFixed(2)}</p>
+                    {totalBS && (
+                      <p className="text-xs text-muted-gray font-space-grotesk mt-0.5">
+                        Bs. {new Intl.NumberFormat('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(totalBS)}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Información del Cliente */}

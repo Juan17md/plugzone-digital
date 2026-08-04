@@ -4,13 +4,15 @@ import { useState } from 'react';
 import { useTienda } from '@/context/TiendaContext';
 import { X, Receipt } from 'lucide-react';
 import Select from '@/components/shared/Select';
+import { MensajeToast } from '@/components/shared/Toast';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
+  onNotify?: (mensaje: MensajeToast) => void;
 }
 
-export default function NuevoGastoModal({ isOpen, onClose }: Props) {
+export default function NuevoGastoModal({ isOpen, onClose, onNotify }: Props) {
   const { registrarGasto } = useTienda();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -33,9 +35,11 @@ export default function NuevoGastoModal({ isOpen, onClose }: Props) {
       
       setFormData({ descripcion: '', monto: '', categoria: 'Suministros' });
       onClose();
+      onNotify?.({ title: 'Gasto registrado con éxito', type: 'success' });
     } catch (error) {
       console.error("Error registrando gasto:", error);
-      alert("Error al registrar el gasto.");
+      onNotify?.({ title: 'Error al registrar el gasto', type: 'error' });
+      if (!onNotify) alert("Error al registrar el gasto.");
     } finally {
       setIsSubmitting(false);
     }
@@ -44,7 +48,7 @@ export default function NuevoGastoModal({ isOpen, onClose }: Props) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-end md:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-200">
+    <div role="dialog" aria-modal="true" aria-label="Registrar gasto operativo" className="fixed inset-0 z-[70] flex items-end md:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-200">
       <div className="bg-titanium-slate w-full max-w-xl rounded-t-3xl md:rounded-3xl border border-[var(--glass-border)] shadow-[var(--glass-shadow)] overflow-hidden flex flex-col max-h-[85dvh] sm:max-h-[90vh]">
         
         <div className="p-5 md:p-6 border-b border-[var(--glass-border)] flex justify-between items-center bg-[var(--glass-bg)]">
@@ -52,7 +56,7 @@ export default function NuevoGastoModal({ isOpen, onClose }: Props) {
             <Receipt size={24} />
             <h2 className="font-plus-jakarta text-xl font-bold">Registrar Gasto</h2>
           </div>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10 text-muted-gray transition-colors">
+          <button onClick={onClose} aria-label="Cerrar modal de gasto" className="p-2 rounded-full hover:bg-white/10 text-muted-gray transition-colors">
             <X size={24} />
           </button>
         </div>
@@ -97,7 +101,7 @@ export default function NuevoGastoModal({ isOpen, onClose }: Props) {
           <button type="button" onClick={onClose} disabled={isSubmitting} className="flex-1 px-6 py-3 rounded-xl font-medium text-polar-white bg-[var(--glass-bg)] hover:bg-[var(--glass-border)] border border-[var(--glass-border)] transition-colors">
             Cancelar
           </button>
-          <button type="submit" form="gastoForm" disabled={isSubmitting} className="flex-[2] px-8 py-3 rounded-xl font-bold bg-alert-coral text-white shadow-lg shadow-alert-coral/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+          <button type="submit" form="gastoForm" disabled={isSubmitting} className="flex-[2] px-8 py-3 rounded-xl font-bold bg-alert-coral text-white shadow-lg shadow-alert-coral/20 hover:-translate-y-0.5 hover:shadow-alert-coral/40 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
             <Receipt size={20} />
             {isSubmitting ? 'Registrando...' : 'Registrar Gasto'}
           </button>

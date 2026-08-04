@@ -1,19 +1,34 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useTienda } from '@/context/TiendaContext';
+import { obtenerTotalVenta, obtenerGananciaVenta } from '@/types';
 import NuevaVentaModal from '@/components/finanzas/NuevaVentaModal';
 import NuevoGastoModal from '@/components/finanzas/NuevoGastoModal';
 import ChartsFinanzas from '@/components/finanzas/ChartsFinanzas';
-import { ShoppingCart, Receipt, TrendingUp, TrendingDown, DollarSign, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ShoppingCart, Receipt, TrendingUp, TrendingDown, DollarSign, ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import { getInicioSemana, getFinSemana, getSemanaAnterior, getSemanaSiguiente, formatearSemana, esSemanaActual } from '@/utils/fechas';
+import BotonExportar from '@/components/shared/BotonExportar';
+import { exportarReporteFinancieroExcel } from '@/utils/exportExcel';
+import { exportarReporteFinancieroPdf } from '@/utils/exportPdf';
+import Toast, { MensajeToast } from '@/components/shared/Toast';
+import Link from 'next/link';
 
 export default function FinanzasPage() {
-  const { ventas, gastos } = useTienda();
+  const { ventas, gastos, tasaBCV } = useTienda();
 
   const [modalVentaOpen, setModalVentaOpen] = useState(false);
   const [modalGastoOpen, setModalGastoOpen] = useState(false);
   const [semanaSeleccionada, setSemanaSeleccionada] = useState(() => getInicioSemana(new Date()));
+  const [toastMessage, setToastMessage] = useState<MensajeToast | null>(null);
+
+  // Ocultar toast automáticamente
+  useEffect(() => {
+    if (toastMessage) {
+      const timer = setTimeout(() => setToastMessage(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toastMessage]);
 
   const semanaAnterior = () => setSemanaSeleccionada(s => getSemanaAnterior(s));
   const semanaSiguiente = () => setSemanaSeleccionada(s => getSemanaSiguiente(s));
@@ -33,8 +48,8 @@ export default function FinanzasPage() {
       return fecha >= inicio && fecha <= fin;
     });
 
-    const ingresosBrutos = ventasDeSemana.reduce((acc, v) => acc + (v.precioVentaFinal * v.cantidadVendida), 0);
-    const gananciaNeta = ventasDeSemana.reduce((acc, v) => acc + v.gananciaNeta, 0);
+    const ingresosBrutos = ventasDeSemana.reduce((acc, v) => acc + obtenerTotalVenta(v), 0);
+    const gananciaNeta = ventasDeSemana.reduce((acc, v) => acc + obtenerGananciaVenta(v), 0);
     const totalGastos = gastosDeSemana.reduce((acc, g) => acc + g.monto, 0);
     const balancePuro = gananciaNeta - totalGastos;
 
@@ -42,6 +57,42 @@ export default function FinanzasPage() {
   }, [ventas, gastos, semanaSeleccionada]);
 
   const noEsSemanaActual = !esSemanaActual(semanaSeleccionada);
+
+  const handleExportarExcel = async () => {
+    try {
+      const textoSemana = formatearSemana(semanaSeleccionada);
+      const nombreArchivo = `Reporte_Financiero_${textoSemana.replace(/\s+/g, '_')}`;
+      await exportarReporteFinancieroExcel(
+        finanzas.ventasDeSemana,
+        finanzas.gastosDeSemana,
+        textoSemana,
+        tasaBCV ?? 1,
+        nombreArchivo
+      );
+      setToastMessage({ title: 'Reporte Excel descargado con éxito', type: 'success' });
+    } catch (error) {
+      console.error("Error al exportar reporte financiero a Excel:", error);
+      setToastMessage({ title: 'Error al generar el reporte Excel', type: 'error' });
+    }
+  };
+
+  const handleExportarPdf = async () => {
+    try {
+      const textoSemana = formatearSemana(semanaSeleccionada);
+      const nombreArchivo = `Reporte_Financiero_${textoSemana.replace(/\s+/g, '_')}`;
+      await exportarReporteFinancieroPdf(
+        finanzas.ventasDeSemana,
+        finanzas.gastosDeSemana,
+        textoSemana,
+        tasaBCV ?? 1,
+        nombreArchivo
+      );
+      setToastMessage({ title: 'Reporte PDF descargado con éxito', type: 'success' });
+    } catch (error) {
+      console.error("Error al exportar reporte financiero a PDF:", error);
+      setToastMessage({ title: 'Error al generar el reporte PDF', type: 'error' });
+    }
+  };
 
   return (
     <div className="space-y-4 md:space-y-6">
@@ -53,7 +104,13 @@ export default function FinanzasPage() {
           <p className="text-muted-gray mt-1 text-sm sm:text-base">Reporte operativo semanal.</p>
         </div>
 
-        <div className="flex gap-2 sm:gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <BotonExportar
+            onExportarExcel={handleExportarExcel}
+            onExportarPdf={handleExportarPdf}
+            texto="Reporte"
+          />
+
           <button
             onClick={() => setModalGastoOpen(true)}
             className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-alert-coral/10 text-alert-coral font-bold px-3 sm:px-5 py-3 rounded-xl hover:bg-alert-coral/20 active:scale-95 transition-all min-h-[44px] text-sm sm:text-base"
@@ -110,7 +167,7 @@ export default function FinanzasPage() {
       </div>
 
       {/* Grid de KPIs Financieros */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
 
         {/* Ingresos Brutos */}
         <div className="glass-panel p-5 md:p-6 rounded-2xl">
@@ -157,13 +214,95 @@ export default function FinanzasPage() {
           </div>
         </div>
 
+        {/* Balance Neto */}
+        <div className="glass-panel p-5 md:p-6 rounded-2xl border border-transparent transition-all duration-300">
+          <div className="flex items-start justify-between">
+            <div className="min-w-0">
+              <p className="text-xs sm:text-sm font-medium text-muted-gray mb-1">Balance Neto</p>
+              <h3 className={`font-space-grotesk font-bold text-xl sm:text-2xl truncate ${finanzas.balancePuro >= 0 ? 'text-cashflow-emerald' : 'text-alert-coral'}`}>
+                ${finanzas.balancePuro.toFixed(2)}
+              </h3>
+              <p className="text-[10px] text-muted-gray mt-0.5">
+                Ganancia − Gastos de la semana
+              </p>
+            </div>
+            <div className={`p-2.5 sm:p-3 rounded-xl shrink-0 ml-3 ${finanzas.balancePuro >= 0 ? 'bg-cashflow-emerald/10 text-cashflow-emerald' : 'bg-alert-coral/10 text-alert-coral'}`}>
+              <TrendingUp size={18} />
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      {/* Tabla de Egresos de la Semana */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="font-plus-jakarta font-bold text-lg text-polar-white">Egresos de la Semana</h3>
+          <Link href="/historial" className="text-electric-cyan text-sm font-medium hover:underline flex items-center gap-1">
+            Ver todo <ArrowRight size={14} />
+          </Link>
+        </div>
+
+        {finanzas.gastosDeSemana.length === 0 ? (
+          <div className="glass-panel p-8 rounded-2xl flex flex-col items-center justify-center text-center">
+            <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-muted-gray mb-3">
+              <Receipt size={22} />
+            </div>
+            <h4 className="text-sm font-bold text-polar-white">Sin gastos registrados</h4>
+            <p className="text-xs text-muted-gray mt-1">No hay egresos operativos en esta semana.</p>
+          </div>
+        ) : (
+          <div className="glass-panel rounded-2xl overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-white/10 bg-white/5">
+                    <th className="p-4 font-medium text-xs text-muted-gray uppercase tracking-wider">Descripción</th>
+                    <th className="p-4 font-medium text-xs text-muted-gray uppercase tracking-wider">Categoría</th>
+                    <th className="p-4 font-medium text-xs text-muted-gray uppercase tracking-wider">Fecha</th>
+                    <th className="p-4 font-medium text-xs text-muted-gray uppercase tracking-wider text-right">Monto</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {finanzas.gastosDeSemana.map(gasto => (
+                    <tr key={gasto.id} className="hover:bg-white/5 transition-colors">
+                      <td className="p-4 text-sm font-bold text-polar-white">{gasto.descripcion}</td>
+                      <td className="p-4">
+                        <span className="inline-flex px-2 py-0.5 rounded bg-alert-coral/10 text-alert-coral text-xs border border-alert-coral/20">
+                          {gasto.categoria}
+                        </span>
+                      </td>
+                      <td className="p-4 text-xs text-muted-gray">
+                        {new Date(gasto.fecha).toLocaleDateString('es-VE', { day: '2-digit', month: 'short' })}
+                      </td>
+                      <td className="p-4 text-sm font-space-grotesk font-bold text-alert-coral text-right">
+                        ${gasto.monto.toFixed(2)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="border-t border-white/10 bg-white/5">
+                    <td colSpan={3} className="p-4 text-sm font-bold text-polar-white text-right">Total Egresos</td>
+                    <td className="p-4 text-sm font-space-grotesk font-bold text-alert-coral text-right">
+                      ${finanzas.totalGastos.toFixed(2)}
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Charts - filtrados por semana */}
       <ChartsFinanzas ventas={finanzas.ventasDeSemana} semanaInicio={getInicioSemana(semanaSeleccionada)} />
 
-      <NuevaVentaModal isOpen={modalVentaOpen} onClose={() => setModalVentaOpen(false)} />
-      <NuevoGastoModal isOpen={modalGastoOpen} onClose={() => setModalGastoOpen(false)} />
+      <NuevaVentaModal isOpen={modalVentaOpen} onClose={() => setModalVentaOpen(false)} onNotify={setToastMessage} />
+      <NuevoGastoModal isOpen={modalGastoOpen} onClose={() => setModalGastoOpen(false)} onNotify={setToastMessage} />
+
+      {/* Toast Notification */}
+      <Toast mensaje={toastMessage} />
     </div>
   );
 }

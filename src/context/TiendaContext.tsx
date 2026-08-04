@@ -4,7 +4,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, orderBy, runTransaction, limit } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged, getIdToken, User } from 'firebase/auth';
 import { db, app } from '@/services/firebase';
-import { Producto, Venta, GastoOperativo, RolUsuario, Usuario } from '@/types';
+import { Producto, Venta, ItemVenta, GastoOperativo, RolUsuario, Usuario, MetodoPago, esVentaMultiProducto } from '@/types';
 
 interface TiendaState {
   isOffline: boolean;
@@ -25,7 +25,7 @@ interface TiendaState {
   // Ventas y Finanzas
   ventas: Venta[];
   gastos: GastoOperativo[];
-  registrarVenta: (venta: Omit<Venta, 'id' | 'fecha' | 'gananciaNeta'>) => Promise<void>;
+  registrarVenta: (payload: NuevaVentaPayload) => Promise<void>;
   registrarGasto: (gasto: Omit<GastoOperativo, 'id' | 'fecha'>) => Promise<void>;
   anularVenta: (id: string) => Promise<void>;
 
@@ -56,6 +56,21 @@ const defaultState: TiendaState = {
   crearUsuario: async () => ({}), editarUsuario: async () => ({}), cambiarContrasena: async () => ({}), alternarBloqueoUsuario: async () => ({}), actualizarRolUsuario: async () => ({}), eliminarUsuario: async () => ({}),
   tasaBCV: null, fechaTasaBCV: null, loadingTasa: true
 };
+
+// Payload para registrar ventas multi-producto
+export interface NuevaVentaPayload {
+  items: {
+    productoId: string;
+    nombreProducto: string;
+    cantidadVendida: number;
+    precioVentaFinal: number;
+  }[];
+  metodoPago: MetodoPago;
+  nombreCliente?: string;
+  cedulaCliente?: string;
+  telefonoCliente?: string;
+  direccionCliente?: string;
+}
 
 const TiendaContext = createContext<TiendaState>(defaultState);
 
@@ -148,8 +163,14 @@ export function TiendaProvider({ children }: { children: React.ReactNode }) {
       setVentas(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Venta[]);
     });
 
-    const unsubGastos = onSnapshot(query(collection(db, 'gastos'), orderBy('fecha', 'desc'), limit(100)), (snapshot) => {
-      setGastos(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as GastoOperativo[]);
+    const unsubGastos = onSnapshot(collection(db, 'gastos'), (snapshot) => {
+      const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as GastoOperativo[];
+      docs.sort((a, b) => {
+        const fechaA = a.fecha ? new Date(a.fecha).getTime() : 0;
+        const fechaB = b.fecha ? new Date(b.fecha).getTime() : 0;
+        return fechaB - fechaA;
+      });
+      setGastos(docs);
     });
 
     return () => {
@@ -184,27 +205,76 @@ export function TiendaProvider({ children }: { children: React.ReactNode }) {
     await deleteDoc(doc(db, 'productos', id));
   };
 
-  // 4. Funciones Finanzas / Ventas Atómicas
-  const registrarVenta = async (venta: Omit<Venta, 'id' | 'fecha' | 'gananciaNeta'>) => {
-    const productoRef = doc(db, 'productos', venta.productoId);
-    
+  // 4. Funciones Finanzas / Ventas Atómicas (Multi-Producto)
+  const registrarVenta = async (payload: NuevaVentaPayload) => {
+    if (!payload.items || payload.items.length === 0) {
+      throw new Error('Debe agregar al menos un producto al carrito.');
+    }
+
     await runTransaction(db, async (transaction) => {
-      const prodDoc = await transaction.get(productoRef);
-      if (!prodDoc.exists()) throw new Error("El producto ya no existe.");
+      // Fase 1: Leer todos los productos y validar stock
+      const productoDocs: { ref: ReturnType<typeof doc>; data: any; item: typeof payload.items[0] }[] = [];
 
-      const currentStock = prodDoc.data().stockActual || 0;
-      if (currentStock < venta.cantidadVendida) throw new Error("No hay stock suficiente para esta venta.");
+      for (const item of payload.items) {
+        const productoRef = doc(db, 'productos', item.productoId);
+        const prodDoc = await transaction.get(productoRef);
+        if (!prodDoc.exists()) throw new Error(`El producto "${item.nombreProducto}" ya no existe.`);
 
-      transaction.update(productoRef, { stockActual: currentStock - venta.cantidadVendida });
+        const currentStock = prodDoc.data().stockActual || 0;
+        if (currentStock < item.cantidadVendida) {
+          throw new Error(`No hay stock suficiente de "${item.nombreProducto}". Disponible: ${currentStock}, solicitado: ${item.cantidadVendida}.`);
+        }
 
+        productoDocs.push({ ref: productoRef, data: prodDoc.data(), item });
+      }
+
+      // Fase 2: Decrementar stock de cada producto
+      for (const { ref, data, item } of productoDocs) {
+        transaction.update(ref, { stockActual: (data.stockActual || 0) - item.cantidadVendida });
+      }
+
+      // Fase 3: Construir items con ganancia calculada
+      const itemsConGanancia: ItemVenta[] = productoDocs.map(({ data, item }) => {
+        const costoTotal = (data.costoCompra || 0) * item.cantidadVendida;
+        const ingresoTotal = item.precioVentaFinal * item.cantidadVendida;
+        return {
+          productoId: item.productoId,
+          nombreProducto: item.nombreProducto,
+          cantidadVendida: item.cantidadVendida,
+          precioVentaFinal: item.precioVentaFinal,
+          gananciaNeta: ingresoTotal - costoTotal,
+        };
+      });
+
+      const totalUSD = itemsConGanancia.reduce((acc, i) => acc + i.precioVentaFinal * i.cantidadVendida, 0);
+      const gananciaNetaTotal = itemsConGanancia.reduce((acc, i) => acc + i.gananciaNeta, 0);
+
+      // Fase 4: Crear documento de venta
+      const primerItem = itemsConGanancia[0];
       const nuevaVentaRef = doc(collection(db, 'ventas'));
-      const costoTotal = prodDoc.data().costoCompra * venta.cantidadVendida;
-      const ingresoTotal = venta.precioVentaFinal * venta.cantidadVendida;
-      
+
       transaction.set(nuevaVentaRef, {
-        ...venta,
-        gananciaNeta: ingresoTotal - costoTotal,
-        fecha: new Date().toISOString()
+        // Datos multi-producto
+        items: itemsConGanancia,
+        totalUSD,
+        gananciaNetaTotal,
+
+        // Campos legacy (primer item) para retrocompatibilidad
+        productoId: primerItem.productoId,
+        nombreProducto: primerItem.nombreProducto,
+        cantidadVendida: primerItem.cantidadVendida,
+        precioVentaFinal: primerItem.precioVentaFinal,
+        gananciaNeta: primerItem.gananciaNeta,
+
+        // Datos de la transacción
+        metodoPago: payload.metodoPago,
+        fecha: new Date().toISOString(),
+
+        // Datos del cliente
+        ...(payload.nombreCliente && { nombreCliente: payload.nombreCliente }),
+        ...(payload.cedulaCliente && { cedulaCliente: payload.cedulaCliente }),
+        ...(payload.telefonoCliente && { telefonoCliente: payload.telefonoCliente }),
+        ...(payload.direccionCliente && { direccionCliente: payload.direccionCliente }),
       });
     });
   };
@@ -226,8 +296,19 @@ export function TiendaProvider({ children }: { children: React.ReactNode }) {
       // Marcar la venta como anulada
       transaction.update(ventaRef, { anulada: true });
       
-      // Devolver stock al producto
-      if (ventaData.productoId) {
+      // Devolver stock: multi-producto o legacy
+      if (esVentaMultiProducto(ventaData)) {
+        for (const item of ventaData.items!) {
+          const productoRef = doc(db, 'productos', item.productoId);
+          const prodDoc = await transaction.get(productoRef);
+          if (prodDoc.exists()) {
+            const stockActual = prodDoc.data().stockActual || 0;
+            transaction.update(productoRef, {
+              stockActual: stockActual + item.cantidadVendida
+            });
+          }
+        }
+      } else if (ventaData.productoId) {
         const productoRef = doc(db, 'productos', ventaData.productoId);
         const prodDoc = await transaction.get(productoRef);
         if (prodDoc.exists()) {

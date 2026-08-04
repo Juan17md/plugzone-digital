@@ -1,0 +1,8 @@
+docs-obsidian
+.agents
+.opencode
+node_modules
+.env*
+.git
+.gitignore
+*.log

@@ -1,13 +1,15 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { Smartphone, PackageOpen, CircleDollarSign, ArrowRight, Sun, Moon, Receipt, ReceiptText, ArrowRightLeft, Calendar, Plus, Ban, Eye } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { Smartphone, PackageOpen, CircleDollarSign, ArrowRight, Sun, Moon, Receipt, ReceiptText, ArrowRightLeft, Calendar, Plus, Ban, Eye, TrendingUp, Wallet } from 'lucide-react';
 import { useTienda } from '@/context/TiendaContext';
+import { obtenerTotalVenta, obtenerCantidadTotal, obtenerResumenProductos, obtenerGananciaVenta } from '@/types';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import NuevaVentaModal from '@/components/finanzas/NuevaVentaModal';
 import NuevoGastoModal from '@/components/finanzas/NuevoGastoModal';
 import ProductModal from '@/components/inventario/ProductModal';
 import DetalleVentaModal from '@/components/finanzas/DetalleVentaModal';
+import Toast, { MensajeToast } from '@/components/shared/Toast';
 import Link from 'next/link';
 
 export default function DashboardPage() {
@@ -21,6 +23,15 @@ export default function DashboardPage() {
   const [productoActiveTab, setProductoActiveTab] = useState<'Telefonos' | 'Accesorios'>('Telefonos');
   const [ventaAAnular, setVentaAAnular] = useState<string | null>(null);
   const [isAnulando, setIsAnulando] = useState(false);
+  const [toastMessage, setToastMessage] = useState<MensajeToast | null>(null);
+
+  // Ocultar toast automáticamente
+  useEffect(() => {
+    if (toastMessage) {
+      const timer = setTimeout(() => setToastMessage(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toastMessage]);
 
   // Detalle de Venta
   const [selectedVentaDetalle, setSelectedVentaDetalle] = useState<any>(null);
@@ -32,12 +43,14 @@ export default function DashboardPage() {
     hoy.setHours(0, 0, 0, 0);
 
     const ventasHoy = ventas.filter(v => new Date(v.fecha) >= hoy && !v.anulada);
-    const ingresosHoy = ventasHoy.reduce((acc, v) => acc + (v.precioVentaFinal * v.cantidadVendida), 0);
-    const equiposHoy = ventasHoy.reduce((acc, v) => acc + v.cantidadVendida, 0);
+    const ingresosHoy = ventasHoy.reduce((acc, v) => acc + obtenerTotalVenta(v), 0);
+    const equiposHoy = ventasHoy.reduce((acc, v) => acc + obtenerCantidadTotal(v), 0);
+    const transaccionesHoy = ventasHoy.length;
+    const gananciaHoy = ventasHoy.reduce((acc, v) => acc + obtenerGananciaVenta(v), 0);
     
     const alertasStock = productos.filter(p => p.stockActual <= p.stockMinimo).length;
 
-    return { ingresosHoy, equiposHoy, alertasStock };
+    return { ingresosHoy, equiposHoy, transaccionesHoy, gananciaHoy, alertasStock };
   }, [ventas, productos]);
 
   // Obtener las últimas 10 ventas ordenadas por fecha (las más recientes primero)
@@ -81,9 +94,34 @@ export default function DashboardPage() {
           <div className="min-w-0">
             <p className="text-xs sm:text-sm text-muted-gray font-medium">Ventas del Día</p>
             <h3 className="font-space-grotesk font-bold text-2xl sm:text-3xl text-polar-white mt-1 truncate">${metricas.ingresosHoy.toFixed(2)}</h3>
+            {tasaBCV !== null && tasaBCV > 0 && (
+              <p className="font-space-grotesk text-xs text-muted-gray mt-0.5 truncate">
+                ≈ Bs {(metricas.ingresosHoy * tasaBCV).toFixed(2)}
+              </p>
+            )}
           </div>
           <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-cashflow-emerald/10 flex items-center justify-center text-cashflow-emerald shrink-0 ml-3">
             <CircleDollarSign size={22} />
+          </div>
+        </div>
+
+        <div className="glass-panel p-5 md:p-6 rounded-2xl flex items-center justify-between hover:-translate-y-1 hover:shadow-xl hover:shadow-black/10 transition-all duration-300">
+          <div className="min-w-0">
+            <p className="text-xs sm:text-sm text-muted-gray font-medium">Ganancia Neta Hoy</p>
+            <h3 className="font-space-grotesk font-bold text-2xl sm:text-3xl text-cashflow-emerald mt-1 truncate">${metricas.gananciaHoy.toFixed(2)}</h3>
+          </div>
+          <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-cashflow-emerald/10 flex items-center justify-center text-cashflow-emerald shrink-0 ml-3">
+            <TrendingUp size={22} />
+          </div>
+        </div>
+
+        <div className="glass-panel p-5 md:p-6 rounded-2xl flex items-center justify-between hover:-translate-y-1 hover:shadow-xl hover:shadow-black/10 transition-all duration-300">
+          <div className="min-w-0">
+            <p className="text-xs sm:text-sm text-muted-gray font-medium">Transacciones Hoy</p>
+            <h3 className="font-space-grotesk font-bold text-2xl sm:text-3xl text-polar-white mt-1">{metricas.transaccionesHoy}</h3>
+          </div>
+          <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-electric-cyan/10 flex items-center justify-center text-electric-cyan shrink-0 ml-3">
+            <Receipt size={22} />
           </div>
         </div>
 
@@ -110,6 +148,30 @@ export default function DashboardPage() {
             <PackageOpen size={22} />
           </div>
         </Link>
+
+        {/* Widget BCV — Tasa del Dólar Oficial */}
+        <div className="glass-panel p-5 md:p-6 rounded-2xl flex items-center justify-between hover:-translate-y-1 hover:shadow-xl hover:shadow-black/10 transition-all duration-300 border border-electric-cyan/10">
+          <div className="min-w-0">
+            <p className="text-xs sm:text-sm text-muted-gray font-medium">Tasa BCV (Dólar Oficial)</p>
+            {tasaBCV !== null && tasaBCV > 0 ? (
+              <>
+                <h3 className="font-space-grotesk font-bold text-2xl sm:text-3xl text-polar-white mt-1 truncate">
+                  Bs {tasaBCV.toFixed(2)}
+                </h3>
+                <p className="text-xs text-muted-gray mt-0.5">
+                  ≈ $1.00 → Bs {tasaBCV.toFixed(2)}
+                </p>
+              </>
+            ) : (
+              <h3 className="font-space-grotesk font-bold text-xl sm:text-2xl text-muted-gray mt-1">
+                Sin conexión
+              </h3>
+            )}
+          </div>
+          <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-neon-amber/10 flex items-center justify-center text-neon-amber shrink-0 ml-3">
+            <Wallet size={22} />
+          </div>
+        </div>
 
       </div>
 
@@ -186,7 +248,7 @@ export default function DashboardPage() {
                       <ReceiptText size={16} />
                     </div>
                     <div className="min-w-0">
-                      <h4 className={`font-bold text-xs sm:text-sm leading-tight truncate ${venta.anulada ? 'line-through text-muted-gray' : 'text-polar-white'}`}>{venta.nombreProducto}</h4>
+                      <h4 className={`font-bold text-xs sm:text-sm leading-tight truncate ${venta.anulada ? 'line-through text-muted-gray' : 'text-polar-white'}`}>{obtenerResumenProductos(venta)}</h4>
                       {venta.nombreCliente && (
                         <p className="text-[10px] text-cashflow-emerald font-semibold mt-0.5 leading-none">
                           Cliente: {venta.nombreCliente}
@@ -200,8 +262,8 @@ export default function DashboardPage() {
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <div className="text-right mr-1">
-                      <p className="text-[10px] text-muted-gray uppercase tracking-wider mb-0.5">{venta.cantidadVendida} und.</p>
-                      <p className={`font-space-grotesk font-bold text-sm sm:text-base ${venta.anulada ? 'text-muted-gray line-through' : 'text-cashflow-emerald'}`}>${(venta.precioVentaFinal * venta.cantidadVendida).toFixed(2)}</p>
+                      <p className="text-[10px] text-muted-gray uppercase tracking-wider mb-0.5">{obtenerCantidadTotal(venta)} und.</p>
+                      <p className={`font-space-grotesk font-bold text-sm sm:text-base ${venta.anulada ? 'text-muted-gray line-through' : 'text-cashflow-emerald'}`}>${obtenerTotalVenta(venta).toFixed(2)}</p>
                     </div>
                     <button
                       onClick={() => { setSelectedVentaDetalle(venta); setModalDetalleOpen(true); }}
@@ -245,7 +307,7 @@ export default function DashboardPage() {
                           {formatearFecha(venta.fecha)}
                         </td>
                         <td className={`p-4 text-sm font-bold ${venta.anulada ? 'line-through text-muted-gray' : 'text-polar-white'}`}>
-                          <div>{venta.nombreProducto}</div>
+                          <div>{obtenerResumenProductos(venta)}</div>
                           {venta.nombreCliente && (
                             <div className="text-xs text-muted-gray font-normal mt-0.5">
                               Cliente: {venta.nombreCliente} {venta.cedulaCliente ? `(${venta.cedulaCliente})` : ''}
@@ -263,10 +325,10 @@ export default function DashboardPage() {
                           </span>
                         </td>
                         <td className="p-4 text-sm font-space-grotesk font-bold text-polar-white text-center">
-                          {venta.cantidadVendida}
+                          {obtenerCantidadTotal(venta)}
                         </td>
                         <td className={`p-4 text-sm font-space-grotesk font-bold text-right ${venta.anulada ? 'text-muted-gray line-through' : 'text-cashflow-emerald'}`}>
-                          ${(venta.precioVentaFinal * venta.cantidadVendida).toFixed(2)}
+                          ${obtenerTotalVenta(venta).toFixed(2)}
                         </td>
                         <td className="p-4 text-center">
                           <div className="flex items-center justify-center gap-2">
@@ -299,10 +361,13 @@ export default function DashboardPage() {
       </div>
 
       {/* Modales */}
-      <NuevaVentaModal isOpen={modalVentaOpen} onClose={() => setModalVentaOpen(false)} />
-      <NuevoGastoModal isOpen={modalGastoOpen} onClose={() => setModalGastoOpen(false)} />
-      <ProductModal isOpen={modalProductoOpen} onClose={() => setModalProductoOpen(false)} activeTab={productoActiveTab} />
+      <NuevaVentaModal isOpen={modalVentaOpen} onClose={() => setModalVentaOpen(false)} onNotify={setToastMessage} />
+      <NuevoGastoModal isOpen={modalGastoOpen} onClose={() => setModalGastoOpen(false)} onNotify={setToastMessage} />
+      <ProductModal isOpen={modalProductoOpen} onClose={() => setModalProductoOpen(false)} activeTab={productoActiveTab} onNotify={setToastMessage} />
       <DetalleVentaModal isOpen={modalDetalleOpen} onClose={() => { setModalDetalleOpen(false); setSelectedVentaDetalle(null); }} venta={selectedVentaDetalle} tasaBCV={tasaBCV} />
+
+      {/* Toast Notification */}
+      <Toast mensaje={toastMessage} />
     </div>
 
     {/* Modal de Confirmación de Anulación */}
@@ -336,8 +401,9 @@ export default function DashboardPage() {
                 try {
                   await anularVenta(ventaAAnular);
                   setVentaAAnular(null);
+                  setToastMessage({ title: 'Venta anulada y stock restaurado', type: 'success' });
                 } catch (err: any) {
-                  alert(err.message || "Error al anular la venta");
+                  setToastMessage({ title: err.message || 'Error al anular la venta', type: 'error' });
                 } finally {
                   setIsAnulando(false);
                 }

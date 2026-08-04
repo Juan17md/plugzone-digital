@@ -1,7 +1,7 @@
 'use client'
 
-import { useMemo } from 'react'
-import { Venta } from '@/types'
+import { useMemo, useState, useEffect } from 'react'
+import { Venta, esVentaMultiProducto, obtenerTotalVenta } from '@/types'
 import { useTheme } from '@/components/providers/ThemeProvider'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -27,6 +27,11 @@ const METODO_COLORS: Record<string, string> = {
 
 export default function ChartsFinanzas({ ventas, semanaInicio }: Props) {
   const { theme } = useTheme()
+  const [isMounted, setIsMounted] = useState(false)
+
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
 
   const diarias = useMemo(() => {
     if (!semanaInicio) return []
@@ -43,7 +48,7 @@ export default function ChartsFinanzas({ ventas, semanaInicio }: Props) {
         const diaFin = new Date(diaInicio)
         diaFin.setHours(23, 59, 59, 999)
         if (f >= diaInicio && f <= diaFin) {
-          totales[i] += v.cantidadVendida * v.precioVentaFinal
+          totales[i] += obtenerTotalVenta(v)
           break
         }
       }
@@ -57,7 +62,7 @@ export default function ChartsFinanzas({ ventas, semanaInicio }: Props) {
   const metodosPago = useMemo(() => {
     const agrupado: Record<string, number> = {}
     ventas.forEach(v => {
-      agrupado[v.metodoPago] = (agrupado[v.metodoPago] || 0) + v.cantidadVendida * v.precioVentaFinal
+      agrupado[v.metodoPago] = (agrupado[v.metodoPago] || 0) + obtenerTotalVenta(v)
     })
     return Object.entries(agrupado)
       .map(([metodo, total]) => ({
@@ -70,8 +75,13 @@ export default function ChartsFinanzas({ ventas, semanaInicio }: Props) {
   const topProductos = useMemo(() => {
     const agrupado: Record<string, number> = {}
     ventas.forEach(v => {
-      const key = v.nombreProducto
-      agrupado[key] = (agrupado[key] || 0) + v.cantidadVendida
+      if (esVentaMultiProducto(v)) {
+        v.items!.forEach(item => {
+          agrupado[item.nombreProducto] = (agrupado[item.nombreProducto] || 0) + item.cantidadVendida
+        })
+      } else if (v.nombreProducto) {
+        agrupado[v.nombreProducto] = (agrupado[v.nombreProducto] || 0) + (v.cantidadVendida || 1)
+      }
     })
     return Object.entries(agrupado)
       .map(([producto, total]) => ({ producto, total }))
@@ -96,9 +106,13 @@ export default function ChartsFinanzas({ ventas, semanaInicio }: Props) {
       {/* Ventas Diarias — full width */}
       <div className="lg:col-span-2 glass-panel p-5 md:p-6 rounded-2xl">
         <h3 className="font-plus-jakarta font-bold text-lg text-polar-white mb-4">Ventas Diarias (Semana)</h3>
-        <div className="h-72">
-          {diarias.some(d => d.total > 0) ? (
-            <ResponsiveContainer width="100%" height="100%">
+        <div className="h-72 w-full">
+          {!isMounted ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="w-6 h-6 border-2 border-electric-cyan border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : diarias.some(d => d.total > 0) ? (
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <BarChart data={diarias} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
                 <CartesianGrid stroke={gridStroke} vertical={false} />
                 <XAxis dataKey="dia" tick={{ fill: 'var(--color-muted-gray)', fontSize: 12 }} axisLine={false} tickLine={false} />
@@ -122,9 +136,11 @@ export default function ChartsFinanzas({ ventas, semanaInicio }: Props) {
       {/* Distribución por Método de Pago */}
       <div className="glass-panel p-5 md:p-6 rounded-2xl">
         <h3 className="font-plus-jakarta font-bold text-lg text-polar-white mb-4">Distribución por Método de Pago</h3>
-        <div className="h-72 flex items-center justify-center">
-          {metodosPago.length > 0 ? (
-            <ResponsiveContainer width="100%" height="100%">
+        <div className="h-72 w-full flex items-center justify-center">
+          {!isMounted ? (
+            <div className="w-6 h-6 border-2 border-electric-cyan border-t-transparent rounded-full animate-spin" />
+          ) : metodosPago.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <PieChart>
                 <Pie
                   data={metodosPago}
@@ -136,7 +152,7 @@ export default function ChartsFinanzas({ ventas, semanaInicio }: Props) {
                   outerRadius={90}
                   paddingAngle={3}
                   labelLine={false}
-                  label={({ payload, cx, x, y }) => {
+                  label={({ payload, x, y }) => {
                     const pct = ((payload.total / totalMetodos) * 100).toFixed(1)
                     return (
                       <text x={x} y={y} textAnchor="middle" dominantBaseline="central" fill="var(--color-polar-white)" fontSize={12} fontWeight={700}>
@@ -176,9 +192,13 @@ export default function ChartsFinanzas({ ventas, semanaInicio }: Props) {
       {/* Top Productos Más Vendidos */}
       <div className="glass-panel p-5 md:p-6 rounded-2xl">
         <h3 className="font-plus-jakarta font-bold text-lg text-polar-white mb-4">Productos Más Vendidos</h3>
-        <div className="h-72">
-          {topProductos.length > 0 ? (
-            <ResponsiveContainer width="100%" height="100%">
+        <div className="h-72 w-full">
+          {!isMounted ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="w-6 h-6 border-2 border-electric-cyan border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : topProductos.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <BarChart data={topProductos} layout="vertical" margin={{ top: 0, right: 20, left: 10, bottom: 0 }}>
                 <CartesianGrid stroke={gridStroke} horizontal={false} />
                 <XAxis type="number" tick={{ fill: 'var(--color-muted-gray)', fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />

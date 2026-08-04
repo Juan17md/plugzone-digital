@@ -10,6 +10,32 @@ interface Props {
   onDelete: (producto: Producto) => void;
 }
 
+type EstadoStock = 'agotado' | 'critico' | 'disponible';
+
+function getEstadoStock(producto: Producto): EstadoStock {
+  if (producto.stockActual <= 0) return 'agotado';
+  if (producto.stockActual <= producto.stockMinimo) return 'critico';
+  return 'disponible';
+}
+
+const BADGES_ESTADO: Record<EstadoStock, { label: string; clase: string; texto: string }> = {
+  agotado: {
+    label: 'AGOTADO',
+    clase: 'bg-alert-coral/10 border-alert-coral/25 text-alert-coral',
+    texto: 'text-alert-coral animate-pulse',
+  },
+  critico: {
+    label: 'CRÍTICO',
+    clase: 'bg-neon-amber/15 border-neon-amber/25 text-neon-amber',
+    texto: 'text-neon-amber',
+  },
+  disponible: {
+    label: 'DISPONIBLE',
+    clase: 'bg-cashflow-emerald/10 border-cashflow-emerald/20 text-cashflow-emerald',
+    texto: 'text-cashflow-emerald',
+  },
+};
+
 export default function ProductList({ productos, loading, onEdit, onDelete }: Props) {
   if (loading) {
     return (
@@ -79,13 +105,20 @@ export default function ProductList({ productos, loading, onEdit, onDelete }: Pr
                 <p className="text-[10px] text-muted-gray uppercase tracking-wider mb-0.5">Precio Venta</p>
                 <p className="font-space-grotesk font-bold text-cashflow-emerald">${p.precioVenta.toFixed(2)}</p>
               </div>
-              <div className={`p-2.5 rounded-lg border ${p.stockActual <= p.stockMinimo ? 'bg-alert-coral/10 border-alert-coral/20' : 'bg-cosmic-midnight/50 border-white/5'}`}>
-                <p className={`text-[10px] uppercase tracking-wider mb-0.5 ${p.stockActual <= p.stockMinimo ? 'text-alert-coral' : 'text-muted-gray'}`}>
+              <div className={`p-2.5 rounded-lg border ${getEstadoStock(p) === 'disponible' ? 'bg-cosmic-midnight/50 border-white/5' : BADGES_ESTADO[getEstadoStock(p)].clase}`}>
+                <p className={`text-[10px] uppercase tracking-wider mb-0.5 ${getEstadoStock(p) === 'disponible' ? 'text-muted-gray' : BADGES_ESTADO[getEstadoStock(p)].texto}`}>
                   Stock Actual
                 </p>
-                <p className={`font-space-grotesk font-bold ${p.stockActual <= p.stockMinimo ? 'text-alert-coral animate-pulse' : 'text-polar-white'}`}>
-                  {p.stockActual} und.
-                </p>
+                <div className="flex items-center justify-between gap-1">
+                  <p className={`font-space-grotesk font-bold ${getEstadoStock(p) === 'disponible' ? 'text-polar-white' : BADGES_ESTADO[getEstadoStock(p)].texto}`}>
+                    {p.stockActual} und.
+                  </p>
+                  {getEstadoStock(p) !== 'disponible' && (
+                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${BADGES_ESTADO[getEstadoStock(p)].clase}`}>
+                      {BADGES_ESTADO[getEstadoStock(p)].label}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -98,7 +131,9 @@ export default function ProductList({ productos, loading, onEdit, onDelete }: Pr
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-white/10 bg-white/5">
-                <th className="p-4 font-medium text-sm text-muted-gray">Producto</th>
+                <th className="p-4 font-medium text-sm text-muted-gray">SKU</th>
+                <th className="p-4 font-medium text-sm text-muted-gray">Nombre</th>
+                <th className="p-4 font-medium text-sm text-muted-gray">Marca</th>
                 <th className="p-4 font-medium text-sm text-muted-gray">Categoría</th>
                 <th className="p-4 font-medium text-sm text-muted-gray">Costo Compra</th>
                 <th className="p-4 font-medium text-sm text-muted-gray">Precio Venta</th>
@@ -110,12 +145,19 @@ export default function ProductList({ productos, loading, onEdit, onDelete }: Pr
               {productos.map(p => (
                 <tr key={p.id} className="hover:bg-white/5 transition-colors">
                   <td className="p-4">
-                    <p className="font-bold text-polar-white">{p.nombre}</p>
-                    <p className="text-xs text-muted-gray">
-                      SKU: {p.sku} • {p.marca}
-                      {p.categoria === 'Teléfonos' && (p.ram || p.almacenamiento) ? ` • ${[p.ram, p.almacenamiento].filter(Boolean).join(' / ')}` : ''}
-                    </p>
+                    <span className="font-space-grotesk text-xs text-muted-gray bg-white/5 border border-white/10 px-2 py-0.5 rounded-md">
+                      {p.sku}
+                    </span>
                   </td>
+                  <td className="p-4">
+                    <p className="font-bold text-polar-white">{p.nombre}</p>
+                    {p.categoria === 'Teléfonos' && (p.ram || p.almacenamiento) && (
+                      <p className="text-xs text-muted-gray">
+                        {[p.ram, p.almacenamiento].filter(Boolean).join(' / ')}
+                      </p>
+                    )}
+                  </td>
+                  <td className="p-4 text-sm text-muted-gray">{p.marca}</td>
                   <td className="p-4">
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/5 text-xs text-polar-white border border-white/10">
                       {getIcon(p.categoria)} {p.categoria}
@@ -128,9 +170,14 @@ export default function ProductList({ productos, loading, onEdit, onDelete }: Pr
                     ${p.precioVenta.toFixed(2)}
                   </td>
                   <td className="p-4">
-                    <span className={`font-space-grotesk font-bold px-3 py-1 rounded-lg ${p.stockActual <= p.stockMinimo ? 'bg-alert-coral/20 text-alert-coral' : 'bg-white/5 text-polar-white'}`}>
-                      {p.stockActual}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className={`font-space-grotesk font-bold px-3 py-1 rounded-lg border ${BADGES_ESTADO[getEstadoStock(p)].clase}`}>
+                        {p.stockActual}
+                      </span>
+                      <span className={`text-[10px] font-bold uppercase tracking-wide ${BADGES_ESTADO[getEstadoStock(p)].texto}`}>
+                        {BADGES_ESTADO[getEstadoStock(p)].label}
+                      </span>
+                    </div>
                   </td>
                   <td className="p-4 text-right">
                     <div className="flex items-center justify-end gap-2">

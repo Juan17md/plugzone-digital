@@ -7,6 +7,9 @@ import ProductList from '@/components/inventario/ProductList';
 import ProductModal from '@/components/inventario/ProductModal';
 import { Plus, Search, Filter, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import Select from '@/components/shared/Select';
+import BotonExportar from '@/components/shared/BotonExportar';
+import { exportarProductosExcel } from '@/utils/exportExcel';
+import { exportarProductosPdf } from '@/utils/exportPdf';
 
 export default function InventarioPage() {
   const { productos, loadingProductos, eliminarProducto } = useTienda();
@@ -29,6 +32,40 @@ export default function InventarioPage() {
       return () => clearTimeout(timer);
     }
   }, [toastMessage]);
+
+  // Handler Exportar a Excel
+  const handleExportarExcel = async () => {
+    if (productosFiltrados.length === 0) {
+      setToastMessage({ title: 'No hay productos para exportar', type: 'error' });
+      return;
+    }
+    try {
+      const fechaStr = new Date().toISOString().split('T')[0];
+      const nombreArchivo = `Inventario_${activeTab}_${fechaStr}`;
+      await exportarProductosExcel(productosFiltrados, nombreArchivo);
+      setToastMessage({ title: 'Excel descargado exitosamente', type: 'success' });
+    } catch (error) {
+      console.error("Error exportando a Excel:", error);
+      setToastMessage({ title: 'Error al generar el archivo Excel', type: 'error' });
+    }
+  };
+
+  // Handler Exportar a PDF
+  const handleExportarPdf = async () => {
+    if (productosFiltrados.length === 0) {
+      setToastMessage({ title: 'No hay productos para exportar', type: 'error' });
+      return;
+    }
+    try {
+      const fechaStr = new Date().toISOString().split('T')[0];
+      const nombreArchivo = `Inventario_${activeTab}_${fechaStr}`;
+      await exportarProductosPdf(productosFiltrados, nombreArchivo);
+      setToastMessage({ title: 'PDF descargado exitosamente', type: 'success' });
+    } catch (error) {
+      console.error("Error exportando a PDF:", error);
+      setToastMessage({ title: 'Error al generar el archivo PDF', type: 'error' });
+    }
+  };
 
   // Filtrado optimizado con Tabs
   const productosFiltrados = useMemo(() => {
@@ -80,22 +117,30 @@ export default function InventarioPage() {
     <div className="space-y-4 md:space-y-6">
       
       {/* Header y Acciones */}
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="min-w-0">
           <h2 className="font-plus-jakarta font-bold text-2xl sm:text-3xl text-polar-white">Inventario</h2>
           <p className="text-muted-gray mt-1 text-sm sm:text-base">Gestiona tu stock de teléfonos y accesorios.</p>
         </div>
         
-        <button 
-          onClick={handleOpenNuevo}
-          className="flex items-center justify-center gap-2 bg-electric-cyan text-white font-bold px-4 sm:px-6 py-3 rounded-xl shadow-lg shadow-electric-cyan/20 hover:-translate-y-1 hover:shadow-electric-cyan/40 hover:box-glow-cyan active:scale-95 transition-all min-h-[44px] shrink-0"
-        >
-          <Plus size={20} />
-          <span className="hidden sm:inline">
-            {activeTab === 'Telefonos' ? 'Agregar Teléfono' : 'Agregar Accesorio'}
-          </span>
-          <span className="sm:hidden">Agregar</span>
-        </button>
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <BotonExportar
+            onExportarExcel={handleExportarExcel}
+            onExportarPdf={handleExportarPdf}
+            texto="Exportar"
+          />
+
+          <button 
+            onClick={handleOpenNuevo}
+            className="flex items-center justify-center gap-2 bg-electric-cyan text-white font-bold px-4 sm:px-6 py-3 rounded-xl shadow-lg shadow-electric-cyan/20 hover:-translate-y-1 hover:shadow-electric-cyan/40 hover:box-glow-cyan active:scale-95 transition-all min-h-[44px]"
+          >
+            <Plus size={20} />
+            <span className="hidden sm:inline">
+              {activeTab === 'Telefonos' ? 'Agregar Teléfono' : 'Agregar Accesorio'}
+            </span>
+            <span className="sm:hidden">Agregar</span>
+          </button>
+        </div>
       </div>
 
       {/* Tabs (Segmented Control) Premium */}

@@ -69,7 +69,7 @@ export default function Select({
     if (!open || !buttonRef.current) return
     const rect = buttonRef.current.getBoundingClientRect()
     const spaceBelow = window.innerHeight - rect.bottom
-    const dropdownHeight = Math.min(options.length * 49 + 8, 224)
+    const dropdownHeight = options.length * 49 + 16
 
     if (spaceBelow >= dropdownHeight) {
       setDropdownStyle({
@@ -77,6 +77,7 @@ export default function Select({
         top: `${rect.bottom + 6}px`,
         left: `${rect.left}px`,
         width: `${rect.width}px`,
+        zIndex: 9999,
       })
     } else {
       setDropdownStyle({
@@ -84,6 +85,7 @@ export default function Select({
         bottom: `${window.innerHeight - rect.top + 6}px`,
         left: `${rect.left}px`,
         width: `${rect.width}px`,
+        zIndex: 9999,
       })
     }
   }, [open, options.length])
@@ -173,13 +175,7 @@ export default function Select({
         <div
           ref={listRef}
           style={dropdownStyle}
-          className="z-[100] min-w-[160px] bg-titanium-slate border border-white/10 rounded-xl shadow-2xl backdrop-blur-2xl overflow-y-auto max-h-56 animate-in fade-in duration-150
-            [&::-webkit-scrollbar]:w-1.5
-            [&::-webkit-scrollbar-track]:bg-transparent
-            [&::-webkit-scrollbar-thumb]:bg-white/10
-            [&::-webkit-scrollbar-thumb]:rounded-full
-            [&::-webkit-scrollbar-thumb]:border-0
-            hover:[&::-webkit-scrollbar-thumb]:bg-white/20"
+          className="z-[100] min-w-[160px] bg-titanium-slate border border-white/10 rounded-xl shadow-2xl backdrop-blur-2xl animate-in fade-in duration-150"
         >
           {options.length === 0 && (
             <div className="px-4 py-3 text-sm text-muted-gray text-center">Sin opciones</div>

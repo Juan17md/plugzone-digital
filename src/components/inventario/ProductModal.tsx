@@ -129,7 +129,7 @@ export default function ProductModal({ isOpen, onClose, productoEditar, activeTa
   const inputClass = "w-full bg-[var(--glass-bg)] border border-[var(--glass-border)] rounded-xl px-4 py-3 text-polar-white focus:outline-none focus:border-electric-cyan focus:ring-1 focus:ring-electric-cyan transition-all";
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-end md:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-200">
+    <div role="dialog" aria-modal="true" aria-label="Formulario de producto" className="fixed inset-0 z-[70] flex items-end md:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-200">
       
       {/* Modal Container */}
       <div className="bg-titanium-slate w-full max-w-2xl rounded-t-3xl md:rounded-3xl border border-[var(--glass-border)] shadow-[var(--glass-shadow)] overflow-hidden flex flex-col max-h-[85dvh] sm:max-h-[90vh]">
@@ -142,7 +142,7 @@ export default function ProductModal({ isOpen, onClose, productoEditar, activeTa
               ? (productoEditar.categoria === 'Teléfonos' ? 'Teléfono' : 'Accesorio')
               : (activeTab === 'Telefonos' ? 'Teléfono' : 'Accesorio')}
           </h2>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-[var(--glass-border)] text-muted-gray transition-colors">
+          <button onClick={onClose} aria-label="Cerrar formulario de producto" className="p-2 rounded-full hover:bg-[var(--glass-border)] text-muted-gray transition-colors">
             <X size={24} />
           </button>
         </div>
