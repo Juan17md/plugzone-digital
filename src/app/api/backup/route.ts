@@ -16,11 +16,36 @@ function verificarSecretoCron(req: NextRequest) {
   return autorizacion === `Bearer ${secreto}`;
 }
 
-export async function GET() {
-  return NextResponse.json(
-    { ok: true, mensaje: 'Endpoint de backup activo', ruta: 'POST /api/backup', colecciones: COLECCIONES, carpetaDrive: CARPETA_BACKUPS, retencion: `${MAXIMO_BACKUPS} backups` },
-    { status: 200 }
-  );
+export async function GET(req: NextRequest) {
+  try {
+    if (!verificarSecretoCron(req)) {
+      const admin = obtenerAdmin();
+      const token = req.headers.get('authorization')?.replace('Bearer ', '');
+
+      if (!admin || !token) {
+        return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+      }
+
+      let decoded;
+      try {
+        decoded = await admin.auth.verifyIdToken(token);
+      } catch {
+        return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
+      }
+
+      const adminDoc = await admin.db.collection('usuarios').doc(decoded.uid).get();
+      if (!adminDoc.exists || adminDoc.data()?.rol !== 'admin') {
+        return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
+      }
+    }
+
+    return NextResponse.json(
+      { ok: true, mensaje: 'Endpoint de backup activo', ruta: 'POST /api/backup', colecciones: COLECCIONES, carpetaDrive: CARPETA_BACKUPS, retencion: `${MAXIMO_BACKUPS} backups` },
+      { status: 200 }
+    );
+  } catch {
+    return NextResponse.json({ error: 'Error interno' }, { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {
