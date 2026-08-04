@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useTienda } from '@/context/TiendaContext';
 import { Producto, CategoriaProducto } from '@/types';
 import ProductList from '@/components/inventario/ProductList';
@@ -68,23 +68,21 @@ export default function InventarioPage() {
   };
 
   // Filtrado optimizado con Tabs
-  const productosFiltrados = useMemo(() => {
-    return productos.filter(p => {
-      // Filtro de Búsqueda
-      const matchSearch = p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          p.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          p.marca.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      // Filtro de Tab Principal
-      const isTelefono = p.categoria === 'Teléfonos';
-      const matchTab = activeTab === 'Telefonos' ? isTelefono : !isTelefono;
+  const productosFiltrados = productos.filter(p => {
+    // Filtro de Búsqueda
+    const matchSearch = p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                        p.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        p.marca.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // Filtro de Tab Principal
+    const isTelefono = p.categoria === 'Teléfonos';
+    const matchTab = activeTab === 'Telefonos' ? isTelefono : !isTelefono;
 
-      // Filtro de Sub-Categoría (Solo aplica en Accesorios, o si es Todas)
-      const matchCategoria = selectedCategoria === 'Todas' || p.categoria === selectedCategoria;
-      
-      return matchSearch && matchTab && matchCategoria;
-    });
-  }, [productos, searchTerm, selectedCategoria, activeTab]);
+    // Filtro de Sub-Categoría (Solo aplica en Accesorios, o si es Todas)
+    const matchCategoria = selectedCategoria === 'Todas' || p.categoria === selectedCategoria;
+    
+    return matchSearch && matchTab && matchCategoria;
+  });
 
   const handleOpenNuevo = () => {
     setProductoEnEdicion(null);

@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useSyncExternalStore } from 'react'
 import { Venta, esVentaMultiProducto, obtenerTotalVenta } from '@/types'
 import { useTheme } from '@/components/providers/ThemeProvider'
 import {
@@ -27,11 +27,11 @@ const METODO_COLORS: Record<string, string> = {
 
 export default function ChartsFinanzas({ ventas, semanaInicio }: Props) {
   const { theme } = useTheme()
-  const [isMounted, setIsMounted] = useState(false)
-
-  useEffect(() => {
-    setIsMounted(true)
-  }, [])
+  const isMounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  )
 
   const diarias = useMemo(() => {
     if (!semanaInicio) return []

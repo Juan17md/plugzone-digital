@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Producto, Venta, GastoOperativo, esVentaMultiProducto } from '@/types';
+import { obtenerDescripcionGasto } from '@/utils/gastos';
 
 /**
  * Formatea una fecha ISO a un formato legible en español para los PDF
@@ -102,7 +103,7 @@ const agregarEncabezadoPdf = (
  * Agrega números de página al pie de cada página del PDF
  */
 const agregarPieDePagina = (doc: jsPDF) => {
-  const totalPages = (doc as any).internal.getNumberOfPages();
+  const totalPages = (doc as unknown as { internal: { getNumberOfPages: () => number } }).internal.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
     doc.setFont('Helvetica', 'normal');
@@ -421,7 +422,7 @@ export const exportarGastosPdf = async (
     totalMontoUSD += montoUSD;
     totalMontoBS += montoBS;
 
-    const desc = g.descripcion || (g as any).concepto || (g as any).nombre || 'Sin descripción';
+    const desc = obtenerDescripcionGasto(g);
 
     return [
       g.id ? `#${g.id.slice(-6).toUpperCase()}` : 'N/A',
@@ -562,7 +563,7 @@ export const exportarReporteFinancieroPdf = async (
   });
 
   // TABLA 2: DETALLE DE VENTAS DE LA SEMANA
-  const finalY1 = (doc as any).lastAutoTable.finalY + 8;
+  const finalY1 = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
   doc.setFont('Helvetica', 'bold');
   doc.setFontSize(11);
   doc.setTextColor(15, 23, 42);
@@ -625,14 +626,14 @@ export const exportarReporteFinancieroPdf = async (
   });
 
   // TABLA 3: GASTOS DE LA SEMANA
-  const finalY2 = (doc as any).lastAutoTable.finalY + 8;
+  const finalY2 = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
   doc.setFont('Helvetica', 'bold');
   doc.setFontSize(11);
   doc.setTextColor(15, 23, 42);
   doc.text('3. Desglose de Gastos de la Semana', 14, finalY2);
 
   const gastosBody = gastosSemana.map((g) => {
-    const desc = g.descripcion || (g as any).concepto || (g as any).nombre || 'Sin descripción';
+    const desc = obtenerDescripcionGasto(g);
     return [
       g.id ? `#${g.id.slice(-6).toUpperCase()}` : 'N/A',
       formatearFechaPdf(g.fecha),

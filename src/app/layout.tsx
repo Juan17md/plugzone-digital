@@ -1,7 +1,5 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter, Plus_Jakarta_Sans, Space_Grotesk } from 'next/font/google';
-import Sidebar from '@/components/shared/Sidebar';
-import BottomNav from '@/components/shared/BottomNav';
 import { Providers } from '@/components/providers/Providers';
 import { AuthGuard } from '@/components/providers/AuthGuard';
 import './globals.css';
@@ -17,7 +15,7 @@ export const metadata: Metadata = {
   appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'PlugZone Digital' },
   icons: {
     icon: [
-      { url: 'https://ik.imagekit.io/h5w0cdkit/plugzone/icono_sin_fondo_e9DNtxsHd.PNG', type: 'image/png' },
+      { url: '/icono_sin_fondo.PNG', type: 'image/png' },
       { url: '/icons/icono-192x192.png', sizes: '192x192', type: 'image/png' },
     ],
     apple: '/icons/icono-192x192.png',

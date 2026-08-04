@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { obtenerAdmin } from '@/services/firebase-admin';
+import { obtenerMensajeError, obtenerCodigoError } from '@/utils/errores';
 
 export async function PATCH(
   req: NextRequest,
@@ -34,10 +35,10 @@ export async function PATCH(
     await admin.db.collection('usuarios').doc(uid).update({ primerInicio: false });
 
     return NextResponse.json({ successo: true });
-  } catch (error: any) {
-    if (error.code === 'auth/id-token-expired') {
+  } catch (error) {
+    if (obtenerCodigoError(error) === 'auth/id-token-expired') {
       return NextResponse.json({ error: 'Sesión expirada. Vuelve a iniciar sesión.' }, { status: 401 });
     }
-    return NextResponse.json({ error: error.message || 'Error interno' }, { status: 500 });
+    return NextResponse.json({ error: obtenerMensajeError(error) }, { status: 500 });
   }
 }

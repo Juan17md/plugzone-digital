@@ -33,11 +33,6 @@ self.addEventListener('fetch', event => {
     return
   }
 
-  if (url.hostname === 'ik.imagekit.io') {
-    event.respondWith(cacheFirst(request))
-    return
-  }
-
   event.respondWith(networkFirst(request))
 })
 

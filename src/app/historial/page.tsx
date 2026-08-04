@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useTienda } from '@/context/TiendaContext';
 import { Search, ReceiptText, Receipt, Calendar, ChevronLeft, ChevronRight, ArrowRightLeft, TrendingDown, ShoppingCart, Ban, Eye } from 'lucide-react';
-import { obtenerTotalVenta, obtenerCantidadTotal, obtenerResumenProductos } from '@/types';
+import { obtenerTotalVenta, obtenerCantidadTotal, obtenerResumenProductos, Venta } from '@/types';
 import DetalleVentaModal from '@/components/finanzas/DetalleVentaModal';
 import BotonExportar from '@/components/shared/BotonExportar';
 import { exportarVentasExcel, exportarGastosExcel } from '@/utils/exportExcel';
 import { exportarVentasPdf, exportarGastosPdf } from '@/utils/exportPdf';
+import { obtenerDescripcionGasto, obtenerMontoGasto } from '@/utils/gastos';
 import Toast, { MensajeToast } from '@/components/shared/Toast';
 
 export default function HistorialPage() {
@@ -79,7 +80,7 @@ export default function HistorialPage() {
   };
 
   // Detalle de Venta
-  const [selectedVentaDetalle, setSelectedVentaDetalle] = useState<any>(null);
+  const [selectedVentaDetalle, setSelectedVentaDetalle] = useState<Venta | null>(null);
   const [modalDetalleOpen, setModalDetalleOpen] = useState(false);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -88,22 +89,22 @@ export default function HistorialPage() {
   };
 
   // Filtrado de ventas
-  const ventasFiltradas = useMemo(() => ventas.filter(v => {
+  const ventasFiltradas = ventas.filter(v => {
     const resumen = obtenerResumenProductos(v).toLowerCase();
     const term = searchTerm.toLowerCase();
     return resumen.includes(term) ||
       v.metodoPago.toLowerCase().includes(term) ||
       (v.nombreCliente || '').toLowerCase().includes(term) ||
       (v.cedulaCliente || '').toLowerCase().includes(term);
-  }), [ventas, searchTerm]);
+  });
 
   // Filtrado de gastos defensivo
-  const gastosFiltrados = useMemo(() => gastos.filter(g => {
-    const desc = (g.descripcion || (g as any).concepto || (g as any).nombre || (g as any).detalle || '').toLowerCase();
+  const gastosFiltrados = gastos.filter(g => {
+    const desc = obtenerDescripcionGasto(g).toLowerCase();
     const cat = (g.categoria || '').toLowerCase();
     const term = searchTerm.toLowerCase();
     return desc.includes(term) || cat.includes(term);
-  }), [gastos, searchTerm]);
+  });
 
   // Paginación dinámica según tab activo
   const itemsActivos = activeTab === 'ventas' ? ventasFiltradas : gastosFiltrados;
@@ -406,9 +407,9 @@ export default function HistorialPage() {
               {/* Vista Móvil (Tarjetas) */}
               <div className="flex flex-col gap-3 md:hidden">
                 {gastosPaginados.map((gasto) => {
-                  const desc = gasto.descripcion || (gasto as any).concepto || (gasto as any).nombre || (gasto as any).detalle || 'Gasto Operativo';
+                  const desc = obtenerDescripcionGasto(gasto);
                   const cat = gasto.categoria || 'Otros';
-                  const monto = typeof gasto.monto === 'number' ? gasto.monto : Number((gasto as any).monto || 0);
+                  const monto = obtenerMontoGasto(gasto);
 
                   return (
                     <div key={gasto.id} className="glass-panel p-4 rounded-xl flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
@@ -453,9 +454,9 @@ export default function HistorialPage() {
                     </thead>
                     <tbody className="divide-y divide-white/5 text-sm">
                       {gastosPaginados.map((gasto) => {
-                        const desc = gasto.descripcion || (gasto as any).concepto || (gasto as any).nombre || (gasto as any).detalle || 'Gasto Operativo';
+                        const desc = obtenerDescripcionGasto(gasto);
                         const cat = gasto.categoria || 'Otros';
-                        const monto = typeof gasto.monto === 'number' ? gasto.monto : Number((gasto as any).monto || 0);
+                        const monto = obtenerMontoGasto(gasto);
 
                         return (
                           <tr key={gasto.id} className="hover:bg-white/[0.03] transition-colors">
@@ -557,8 +558,8 @@ export default function HistorialPage() {
                     await anularVenta(ventaAAnular);
                     setVentaAAnular(null);
                     setToastMessage({ title: 'Venta anulada y stock restaurado', type: 'success' });
-                  } catch (err: any) {
-                    setToastMessage({ title: err.message || 'Error al anular la venta', type: 'error' });
+                  } catch (err) {
+                    setToastMessage({ title: err instanceof Error ? err.message : 'Error al anular la venta', type: 'error' });
                   } finally {
                     setIsAnulando(false);
                   }

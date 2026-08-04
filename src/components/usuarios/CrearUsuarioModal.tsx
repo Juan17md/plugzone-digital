@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Mail, Key, UserPlus, Loader2 } from 'lucide-react';
+import { X, Mail, Key, UserPlus } from 'lucide-react';
 import { useTienda } from '@/context/TiendaContext';
 import { RolUsuario } from '@/types';
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { obtenerAdmin } from '@/services/firebase-admin';
+import { obtenerMensajeError, obtenerCodigoError } from '@/utils/errores';
 
 const ESPERAR_MS = 500;
 const REINTENTOS_MAX = 3;
@@ -15,8 +16,8 @@ async function eliminarUsuarioDeAuthConReintento(uid: string) {
     try {
       await admin.auth.deleteUser(uid);
       return;
-    } catch (error: any) {
-      const esUsuarioNoEncontrado = error?.code === 'auth/user-not-found';
+    } catch (error) {
+      const esUsuarioNoEncontrado = obtenerCodigoError(error) === 'auth/user-not-found';
       const esUltimoIntento = intento === REINTENTOS_MAX;
       if (esUsuarioNoEncontrado || esUltimoIntento) {
         throw error;
@@ -56,7 +57,7 @@ export async function PATCH(
 
     const { bloqueado, rol, email, password } = await req.json();
 
-    const datosActualizar: Record<string, any> = {};
+    const datosActualizar: Record<string, string | boolean> = {};
 
     if (typeof bloqueado === 'boolean') {
       datosActualizar.bloqueado = bloqueado;
@@ -86,11 +87,11 @@ export async function PATCH(
     }
 
     return NextResponse.json({ successo: true });
-  } catch (error: any) {
-    if (error.code === 'auth/id-token-expired') {
+  } catch (error) {
+    if (obtenerCodigoError(error) === 'auth/id-token-expired') {
       return NextResponse.json({ error: 'Token expirado' }, { status: 401 });
     }
-    return NextResponse.json({ error: error.message || 'Error interno' }, { status: 500 });
+    return NextResponse.json({ error: obtenerMensajeError(error) }, { status: 500 });
   }
 }
 
@@ -124,8 +125,8 @@ export async function DELETE(
 
     try {
       await eliminarUsuarioDeAuthConReintento(uid);
-    } catch (error: any) {
-      if (error?.code !== 'auth/user-not-found') {
+    } catch (error) {
+      if (obtenerCodigoError(error) !== 'auth/user-not-found') {
         throw error;
       }
       // Si el usuario ya no existe en Auth, se continúa para limpiar Firestore.
@@ -134,10 +135,10 @@ export async function DELETE(
     await admin.db.collection('usuarios').doc(uid).delete();
 
     return NextResponse.json({ successo: true });
-  } catch (error: any) {
-    if (error.code === 'auth/id-token-expired') {
+  } catch (error) {
+    if (obtenerCodigoError(error) === 'auth/id-token-expired') {
       return NextResponse.json({ error: 'Token expirado' }, { status: 401 });
     }
-    return NextResponse.json({ error: error.message || 'Error interno' }, { status: 500 });
+    return NextResponse.json({ error: obtenerMensajeError(error) }, { status: 500 });
   }
 }

@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useTienda } from '@/context/TiendaContext';
-import { X, ShoppingCart, Search, Plus, Minus, Trash2, RotateCcw } from 'lucide-react';
+import { X, ShoppingCart, Search, Plus, Minus, Trash2 } from 'lucide-react';
 import Select from '@/components/shared/Select';
 import { MetodoPago } from '@/types';
 import { MensajeToast } from '@/components/shared/Toast';
@@ -156,9 +156,10 @@ export default function NuevaVentaModal({ isOpen, onClose, onNotify }: Props) {
       resetearFormulario();
       onClose();
       onNotify?.({ title: 'Venta registrada con éxito', type: 'success' });
-    } catch (error: any) {
-      onNotify?.({ title: error.message || 'Error al registrar la venta', type: 'error' });
-      if (!onNotify) alert(error.message || "Error al registrar la venta.");
+    } catch (error) {
+      const mensaje = error instanceof Error ? error.message : 'Error al registrar la venta';
+      onNotify?.({ title: mensaje, type: 'error' });
+      if (!onNotify) alert(mensaje);
     } finally {
       setIsSubmitting(false);
     }

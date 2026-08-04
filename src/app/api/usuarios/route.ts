@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { obtenerAdmin } from '@/services/firebase-admin';
 import { RolUsuario } from '@/types';
+import { obtenerMensajeError, obtenerCodigoError } from '@/utils/errores';
 
 export async function GET(req: NextRequest) {
   try {
@@ -25,11 +26,11 @@ export async function GET(req: NextRequest) {
     const usuarios = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() }));
 
     return NextResponse.json({ usuarios });
-  } catch (error: any) {
-    if (error.code === 'auth/id-token-expired') {
+  } catch (error) {
+    if (obtenerCodigoError(error) === 'auth/id-token-expired') {
       return NextResponse.json({ error: 'Token expirado' }, { status: 401 });
     }
-    return NextResponse.json({ error: error.message || 'Error interno' }, { status: 500 });
+    return NextResponse.json({ error: obtenerMensajeError(error) }, { status: 500 });
   }
 }
 
@@ -87,13 +88,13 @@ export async function POST(req: NextRequest) {
         creadoEn: new Date().toISOString(),
       },
     });
-  } catch (error: any) {
-    if (error.code === 'auth/email-already-exists') {
+  } catch (error) {
+    if (obtenerCodigoError(error) === 'auth/email-already-exists') {
       return NextResponse.json({ error: 'El email ya está en uso' }, { status: 409 });
     }
-    if (error.code === 'auth/id-token-expired') {
+    if (obtenerCodigoError(error) === 'auth/id-token-expired') {
       return NextResponse.json({ error: 'Token expirado' }, { status: 401 });
     }
-    return NextResponse.json({ error: error.message || 'Error interno' }, { status: 500 });
+    return NextResponse.json({ error: obtenerMensajeError(error) }, { status: 500 });
   }
 }

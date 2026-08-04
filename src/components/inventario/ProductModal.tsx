@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Producto, CategoriaProducto } from '@/types';
 import { useTienda } from '@/context/TiendaContext';
 import { X, Save, Trash2 } from 'lucide-react';
@@ -16,6 +16,32 @@ interface Props {
 
 const CATEGORIAS_ACCESORIOS: CategoriaProducto[] = ['Protectores', 'Cargadores', 'Auriculares', 'Otros'];
 
+const formVacio = (tab: 'Telefonos' | 'Accesorios') => ({
+  sku: '',
+  nombre: '',
+  marca: '',
+  categoria: (tab === 'Telefonos' ? 'Teléfonos' : 'Protectores') as CategoriaProducto,
+  costoCompra: '',
+  precioVenta: '',
+  stockActual: '',
+  stockMinimo: '5',
+  ram: '',
+  almacenamiento: '',
+});
+
+const formDeProducto = (p: Producto) => ({
+  sku: p.sku,
+  nombre: p.nombre,
+  marca: p.marca,
+  categoria: p.categoria,
+  costoCompra: p.costoCompra.toString(),
+  precioVenta: p.precioVenta.toString(),
+  stockActual: p.stockActual.toString(),
+  stockMinimo: p.stockMinimo.toString(),
+  ram: p.ram || '',
+  almacenamiento: p.almacenamiento || '',
+});
+
 export default function ProductModal({ isOpen, onClose, productoEditar, activeTab = 'Telefonos', onNotify }: Props) {
   const { agregarProducto, actualizarProducto, eliminarProducto } = useTienda();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -26,49 +52,19 @@ export default function ProductModal({ isOpen, onClose, productoEditar, activeTa
     ? (productoEditar.categoria === 'Teléfonos' ? ['Teléfonos'] : CATEGORIAS_ACCESORIOS) 
     : (activeTab === 'Telefonos' ? ['Teléfonos'] : CATEGORIAS_ACCESORIOS);
 
-  const [formData, setFormData] = useState({
-    sku: '',
-    nombre: '',
-    marca: '',
-    categoria: (productoEditar ? productoEditar.categoria : (activeTab === 'Telefonos' ? 'Teléfonos' : 'Protectores')) as CategoriaProducto,
-    costoCompra: '',
-    precioVenta: '',
-    stockActual: '',
-    stockMinimo: '5',
-    ram: '',
-    almacenamiento: '',
-  });
+  const [formData, setFormData] = useState(formVacio(activeTab));
 
-  useEffect(() => {
-    if (productoEditar) {
-      setFormData({
-        sku: productoEditar.sku,
-        nombre: productoEditar.nombre,
-        marca: productoEditar.marca,
-        categoria: productoEditar.categoria,
-        costoCompra: productoEditar.costoCompra.toString(),
-        precioVenta: productoEditar.precioVenta.toString(),
-        stockActual: productoEditar.stockActual.toString(),
-        stockMinimo: productoEditar.stockMinimo.toString(),
-        ram: productoEditar.ram || '',
-        almacenamiento: productoEditar.almacenamiento || '',
-      });
-    } else {
-      setFormData({
-        sku: '', 
-        nombre: '', 
-        marca: '', 
-        categoria: activeTab === 'Telefonos' ? 'Teléfonos' : 'Protectores',
-        costoCompra: '', 
-        precioVenta: '', 
-        stockActual: '', 
-        stockMinimo: '5',
-        ram: '',
-        almacenamiento: '',
-      });
-    }
+  // Ajuste de estado durante el render: cuando cambia el producto a editar, el
+  // estado de apertura o la pestaña activa, se reinicia el formulario sin
+  // depender de un useEffect (patrón recomendado por React).
+  const claveFormulario = `${productoEditar?.id ?? 'nuevo'}|${isOpen}|${activeTab}`;
+  const [claveRender, setClaveRender] = useState(claveFormulario);
+
+  if (claveFormulario !== claveRender) {
+    setClaveRender(claveFormulario);
+    setFormData(productoEditar ? formDeProducto(productoEditar) : formVacio(activeTab));
     setConfirmDelete(false);
-  }, [productoEditar, isOpen, activeTab]);
+  }
 
   if (!isOpen) return null;
 

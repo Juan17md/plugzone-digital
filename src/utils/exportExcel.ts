@@ -1,5 +1,6 @@
 import ExcelJS from 'exceljs';
 import { Producto, Venta, GastoOperativo, esVentaMultiProducto } from '@/types';
+import { obtenerDescripcionGasto } from '@/utils/gastos';
 
 /**
  * Función auxiliar para formatear fechas de manera legible en Excel
@@ -383,7 +384,7 @@ export const exportarGastosExcel = async (
     totalGastosUSD += montoUSD;
     totalGastosBS += montoBS;
 
-    const desc = g.descripcion || (g as any).concepto || (g as any).nombre || 'Sin descripción';
+    const desc = obtenerDescripcionGasto(g);
 
     const row = worksheet.addRow({
       id: g.id ? `#${g.id.slice(-6).toUpperCase()}` : 'N/A',
@@ -553,7 +554,7 @@ export const exportarReporteFinancieroExcel = async (
   aplicarEstilosEncabezado(wsGastos);
 
   gastosSemana.forEach((g) => {
-    const desc = g.descripcion || (g as any).concepto || (g as any).nombre || 'Sin descripción';
+    const desc = obtenerDescripcionGasto(g);
     const r = wsGastos.addRow({
       id: g.id ? `#${g.id.slice(-6).toUpperCase()}` : 'N/A',
       fecha: formatearFechaExcel(g.fecha),

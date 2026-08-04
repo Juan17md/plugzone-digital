@@ -18,10 +18,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const [suscripcionActiva, setSuscripcionActiva] = useState(true);
 
   useEffect(() => {
-    if (!user) {
-      setSuscripcionLoading(false);
-      return;
-    }
+    if (!user) return;
 
     const verificarSuscripcion = async () => {
       try {
@@ -43,7 +40,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   }, [user]);
 
   useEffect(() => {
-    if (authLoading || suscripcionLoading || rolLoading) return;
+    if (authLoading || rolLoading || (user && suscripcionLoading)) return;
 
     const esRutaPublica = RUTAS_PUBLICAS.includes(pathname);
 
@@ -84,11 +81,11 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     }
   }, [user, authLoading, suscripcionLoading, suscripcionActiva, rolLoading, rol, bloqueado, primerInicio, pathname, router]);
 
-  if (authLoading || suscripcionLoading || rolLoading) {
+  if (authLoading || rolLoading || (user && suscripcionLoading)) {
     return (
       <div className="min-h-screen w-full flex flex-col items-center justify-center gap-6 bg-cosmic-midnight">
         <img
-          src="https://ik.imagekit.io/h5w0cdkit/plugzone/icono_sin_fondo_e9DNtxsHd.PNG"
+          src="/icono_sin_fondo.PNG"
           alt="Cargando..."
           className="w-16 h-16 sm:w-20 sm:h-20 object-contain opacity-40 animate-pulse"
         />

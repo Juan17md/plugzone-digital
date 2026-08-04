@@ -6,7 +6,6 @@ import { doc, getDoc } from 'firebase/firestore';
 import { app, db } from '@/services/firebase';
 import { Lock, Mail, Key, Eye, EyeOff, Zap } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useTheme } from '@/components/providers/ThemeProvider';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -15,7 +14,6 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
-  const { theme } = useTheme();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,7 +29,7 @@ export default function LoginPage() {
       const activa = snap.exists() ? snap.data().activa !== false : true;
 
       router.push(activa ? '/dashboard' : '/bloqueado');
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
       setError('Credenciales inválidas. Solo el propietario tiene acceso.');
     } finally {
@@ -49,7 +47,7 @@ export default function LoginPage() {
       {/* Columna izquierda: marca (pantalla completa) */}
       <div className="hidden lg:flex flex-col items-center justify-center gap-6 p-10 relative bg-gradient-to-br from-electric-cyan/10 via-transparent to-blue-600/10 border-r border-[var(--glass-border)]">
         <img
-          src="https://ik.imagekit.io/h5w0cdkit/plugzone/icono_sin_fondo_e9DNtxsHd.PNG"
+          src="/icono_sin_fondo.PNG"
           alt="PlugZone Logo"
           className="w-auto h-44 object-contain drop-shadow-[0_0_30px_rgba(0,242,254,0.25)]"
         />
@@ -68,7 +66,7 @@ export default function LoginPage() {
         {/* Versión compacta de la marca en móvil */}
         <div className="flex flex-col items-center text-center mb-10 lg:hidden">
           <img
-            src="https://ik.imagekit.io/h5w0cdkit/plugzone/icono_sin_fondo_e9DNtxsHd.PNG"
+            src="/icono_sin_fondo.PNG"
             alt="PlugZone Logo"
             className="w-auto h-24 sm:h-28 mb-4 object-contain"
           />

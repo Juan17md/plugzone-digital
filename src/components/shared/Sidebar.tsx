@@ -34,7 +34,7 @@ export default function Sidebar() {
       {/* Logo Area */}
       <div className="p-6 flex items-center gap-3">
         <img
-          src="https://ik.imagekit.io/h5w0cdkit/plugzone/icono_sin_fondo_e9DNtxsHd.PNG"
+          src="/icono_sin_fondo.PNG"
           alt="PlugZone Logo"
           className="w-auto h-9 rounded-lg object-contain"
         />

@@ -9,7 +9,6 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@imagekit/nodejs": "^7.8.0",
     "exceljs": "^4.4.0",
     "firebase": "^12.13.0",
     "firebase-admin": "11.11.1",

@@ -5,6 +5,7 @@ import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, order
 import { getAuth, onAuthStateChanged, getIdToken, User } from 'firebase/auth';
 import { db, app } from '@/services/firebase';
 import { Producto, Venta, ItemVenta, GastoOperativo, RolUsuario, Usuario, MetodoPago, esVentaMultiProducto } from '@/types';
+import { obtenerMensajeError } from '@/utils/errores';
 
 interface TiendaState {
   isOffline: boolean;
@@ -77,7 +78,9 @@ const TiendaContext = createContext<TiendaState>(defaultState);
 export const useTienda = () => useContext(TiendaContext);
 
 export function TiendaProvider({ children }: { children: React.ReactNode }) {
-  const [isOffline, setIsOffline] = useState(false);
+  const [isOffline, setIsOffline] = useState<boolean>(
+    () => typeof navigator !== 'undefined' ? !navigator.onLine : false
+  );
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [rol, setRol] = useState<RolUsuario | null>(null);
@@ -107,6 +110,8 @@ export function TiendaProvider({ children }: { children: React.ReactNode }) {
         setRolLoading(false);
         setBloqueado(false);
         setPrimerInicio(false);
+        setUsuarios([]);
+        setLoadingUsuarios(false);
       }
       setAuthLoading(false);
     });
@@ -141,7 +146,6 @@ export function TiendaProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const handleOnline = () => setIsOffline(false);
     const handleOffline = () => setIsOffline(true);
-    if (typeof navigator !== 'undefined') setIsOffline(!navigator.onLine);
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
     return () => {
@@ -181,8 +185,6 @@ export function TiendaProvider({ children }: { children: React.ReactNode }) {
   // 2.1 Sincronización de usuarios (solo admin)
   useEffect(() => {
     if (!user || rol !== 'admin') {
-      setUsuarios([]);
-      setLoadingUsuarios(false);
       return;
     }
 
@@ -213,7 +215,7 @@ export function TiendaProvider({ children }: { children: React.ReactNode }) {
 
     await runTransaction(db, async (transaction) => {
       // Fase 1: Leer todos los productos y validar stock
-      const productoDocs: { ref: ReturnType<typeof doc>; data: any; item: typeof payload.items[0] }[] = [];
+      const productoDocs: { ref: ReturnType<typeof doc>; data: Partial<Producto>; item: typeof payload.items[0] }[] = [];
 
       for (const item of payload.items) {
         const productoRef = doc(db, 'productos', item.productoId);
@@ -339,8 +341,8 @@ export function TiendaProvider({ children }: { children: React.ReactNode }) {
       const data = await res.json();
       if (!res.ok) return { error: data.error || 'Error al crear usuario' };
       return {};
-    } catch (err: any) {
-      return { error: err.message };
+    } catch (error) {
+      return { error: obtenerMensajeError(error) };
     }
   }, []);
 
@@ -353,10 +355,10 @@ export function TiendaProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({ bloqueado: bloquear }),
       });
       const data = await res.json();
-      if (!res.ok) return { error: data.error || 'Error al actualizar usuario' };
+      if (!res.ok) return { error: data.error || 'Error al editar usuario' };
       return {};
-    } catch (err: any) {
-      return { error: err.message };
+    } catch (error) {
+      return { error: obtenerMensajeError(error) };
     }
   }, []);
 
@@ -371,8 +373,8 @@ export function TiendaProvider({ children }: { children: React.ReactNode }) {
       const data = await res.json();
       if (!res.ok) return { error: data.error || 'Error al actualizar usuario' };
       return {};
-    } catch (err: any) {
-      return { error: err.message };
+    } catch (error) {
+      return { error: obtenerMensajeError(error) };
     }
   }, []);
 
@@ -384,10 +386,10 @@ export function TiendaProvider({ children }: { children: React.ReactNode }) {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      if (!res.ok) return { error: data.error || 'Error al eliminar usuario' };
+      if (!res.ok) return { error: data.error || 'Error al actualizar usuario' };
       return {};
-    } catch (err: any) {
-      return { error: err.message };
+    } catch (error) {
+      return { error: obtenerMensajeError(error) };
     }
   }, []);
 
@@ -400,10 +402,10 @@ export function TiendaProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify(datos),
       });
       const data = await res.json();
-      if (!res.ok) return { error: data.error || 'Error al editar usuario' };
+      if (!res.ok) return { error: data.error || 'Error al eliminar usuario' };
       return {};
-    } catch (err: any) {
-      return { error: err.message };
+    } catch (error) {
+      return { error: obtenerMensajeError(error) };
     }
   }, []);
 
@@ -419,8 +421,8 @@ export function TiendaProvider({ children }: { children: React.ReactNode }) {
       if (!res.ok) return { error: data.error || 'Error al cambiar contraseña' };
       setPrimerInicio(false);
       return {};
-    } catch (err: any) {
-      return { error: err.message };
+    } catch (error) {
+      return { error: obtenerMensajeError(error) };
     }
   }, []);
 

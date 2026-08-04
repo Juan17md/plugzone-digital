@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useState, useSyncExternalStore } from 'react';
 
 type Theme = 'dark' | 'light';
 
@@ -17,23 +17,26 @@ const ThemeContext = createContext<ThemeContextType>({
 export const useTheme = () => useContext(ThemeContext);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>('dark');
-  const [mounted, setMounted] = useState(false);
+  // Inicialización perezosa del tema (lee localStorage y preferencia del sistema
+  // solo en el cliente, evitando el setState dentro de un useEffect).
+  const [theme, setTheme] = useState<Theme>(() => {
+    if (typeof window === 'undefined') return 'dark';
 
-  useEffect(() => {
-    // Solo se ejecuta en cliente
     const savedTheme = localStorage.getItem('pz_theme') as Theme | null;
     const systemPrefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
-    
-    if (savedTheme) {
-      setTheme(savedTheme);
-      if (savedTheme === 'light') document.documentElement.classList.add('light');
-    } else if (systemPrefersLight) {
-      setTheme('light');
-      document.documentElement.classList.add('light');
-    }
-    setMounted(true);
-  }, []);
+    const temaInicial: Theme = savedTheme ?? (systemPrefersLight ? 'light' : 'dark');
+
+    if (temaInicial === 'light') document.documentElement.classList.add('light');
+
+    return temaInicial;
+  });
+
+  // Detecta el montaje en cliente sin setState en effect (evita FOUC).
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
 
   const toggleTheme = () => {
     setTheme(prev => {

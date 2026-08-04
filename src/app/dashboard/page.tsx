@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { Smartphone, PackageOpen, CircleDollarSign, ArrowRight, Sun, Moon, Receipt, ReceiptText, ArrowRightLeft, Calendar, Plus, Ban, Eye, TrendingUp, Wallet } from 'lucide-react';
+import { Smartphone, PackageOpen, CircleDollarSign, ArrowRight, Sun, Moon, Receipt, ReceiptText, Ban, Eye, TrendingUp, Wallet } from 'lucide-react';
 import { useTienda } from '@/context/TiendaContext';
-import { obtenerTotalVenta, obtenerCantidadTotal, obtenerResumenProductos, obtenerGananciaVenta } from '@/types';
+import { obtenerTotalVenta, obtenerCantidadTotal, obtenerResumenProductos, obtenerGananciaVenta, Venta } from '@/types';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import NuevaVentaModal from '@/components/finanzas/NuevaVentaModal';
 import NuevoGastoModal from '@/components/finanzas/NuevoGastoModal';
@@ -34,7 +34,7 @@ export default function DashboardPage() {
   }, [toastMessage]);
 
   // Detalle de Venta
-  const [selectedVentaDetalle, setSelectedVentaDetalle] = useState<any>(null);
+  const [selectedVentaDetalle, setSelectedVentaDetalle] = useState<Venta | null>(null);
   const [modalDetalleOpen, setModalDetalleOpen] = useState(false);
 
   // Cálculos del Día
@@ -402,8 +402,8 @@ export default function DashboardPage() {
                   await anularVenta(ventaAAnular);
                   setVentaAAnular(null);
                   setToastMessage({ title: 'Venta anulada y stock restaurado', type: 'success' });
-                } catch (err: any) {
-                  setToastMessage({ title: err.message || 'Error al anular la venta', type: 'error' });
+                } catch (err) {
+                  setToastMessage({ title: err instanceof Error ? err.message : 'Error al anular la venta', type: 'error' });
                 } finally {
                   setIsAnulando(false);
                 }

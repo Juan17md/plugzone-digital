@@ -5,6 +5,7 @@ import { useTienda } from '@/context/TiendaContext';
 import { X, Receipt } from 'lucide-react';
 import Select from '@/components/shared/Select';
 import { MensajeToast } from '@/components/shared/Toast';
+import { CategoriaGasto } from '@/types';
 
 interface Props {
   isOpen: boolean;
@@ -78,7 +79,7 @@ export default function NuevoGastoModal({ isOpen, onClose, onNotify }: Props) {
                 <label className="text-sm font-medium text-muted-gray">Categoría</label>
                 <Select
                   value={formData.categoria}
-                  onChange={v => setFormData({...formData, categoria: v as any})}
+                  onChange={v => setFormData({...formData, categoria: v as CategoriaGasto})}
                   options={[
                     { value: 'Suministros', label: 'Suministros' },
                     { value: 'Alquiler', label: 'Alquiler' },
