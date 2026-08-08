@@ -1,4 +1,4 @@
-import { MetodoPago, Venta, RetiroCaja, MontosPorMetodo, obtenerTotalVenta } from '@/types';
+import { MetodoPago, Venta, RetiroCaja, GastoOperativo, MontosPorMetodo, obtenerTotalVenta } from '@/types';
 
 export const METODOS_PAGO: { value: MetodoPago; label: string }[] = [
   { value: 'Efectivo', label: 'Efectivo' },
@@ -47,6 +47,16 @@ export function agruparRetirosPorMetodo(retiros: RetiroCaja[], inicio: Date, fin
   return agrupado;
 }
 
+export function agruparGastosPorMetodo(gastos: GastoOperativo[], inicio: Date, fin: Date): MontosPorMetodo {
+  const agrupado: MontosPorMetodo = {};
+  gastos.forEach(g => {
+    const fecha = new Date(g.fecha);
+    if (fecha < inicio || fecha > fin) return;
+    agrupado[g.metodoPago] = redondear((agrupado[g.metodoPago] ?? 0) + g.monto);
+  });
+  return agrupado;
+}
+
 export function sumarMontos(montos: MontosPorMetodo): number {
   return redondear(Object.values(montos).reduce((acc, m) => acc + (m ?? 0), 0));
 }
@@ -54,28 +64,33 @@ export function sumarMontos(montos: MontosPorMetodo): number {
 export interface ResumenCajaSemana {
   ventas: MontosPorMetodo;
   retiros: MontosPorMetodo;
+  gastos: MontosPorMetodo;
   saldo: MontosPorMetodo;
   totalVentas: number;
   totalRetiros: number;
+  totalGastos: number;
   totalSaldo: number;
 }
 
-export function calcularResumenCaja(ventas: Venta[], retiros: RetiroCaja[], inicio: Date, fin: Date): ResumenCajaSemana {
+export function calcularResumenCaja(ventas: Venta[], retiros: RetiroCaja[], gastos: GastoOperativo[], inicio: Date, fin: Date): ResumenCajaSemana {
   const ventasPorMetodo = agruparVentasPorMetodo(ventas, inicio, fin);
   const retirosPorMetodo = agruparRetirosPorMetodo(retiros, inicio, fin);
+  const gastosPorMetodo = agruparGastosPorMetodo(gastos, inicio, fin);
 
   const saldo: MontosPorMetodo = {};
   METODOS_PAGO.forEach(({ value }) => {
-    saldo[value] = redondear((ventasPorMetodo[value] ?? 0) - (retirosPorMetodo[value] ?? 0));
+    saldo[value] = redondear((ventasPorMetodo[value] ?? 0) - (retirosPorMetodo[value] ?? 0) - (gastosPorMetodo[value] ?? 0));
   });
 
   return {
     ventas: ventasPorMetodo,
     retiros: retirosPorMetodo,
+    gastos: gastosPorMetodo,
     saldo,
     totalVentas: sumarMontos(ventasPorMetodo),
     totalRetiros: sumarMontos(retirosPorMetodo),
-    totalSaldo: redondear(sumarMontos(ventasPorMetodo) - sumarMontos(retirosPorMetodo)),
+    totalGastos: sumarMontos(gastosPorMetodo),
+    totalSaldo: redondear(sumarMontos(ventasPorMetodo) - sumarMontos(retirosPorMetodo) - sumarMontos(gastosPorMetodo)),
   };
 }
 

@@ -5,12 +5,13 @@ import {
   nombreMetodo,
   agruparVentasPorMetodo,
   agruparRetirosPorMetodo,
+  agruparGastosPorMetodo,
   sumarMontos,
   calcularResumenCaja,
   calcularDiferenciaCierre,
   redondearParaArqueo,
 } from '@/utils/caja';
-import { Venta, RetiroCaja, MetodoPago } from '@/types';
+import { Venta, RetiroCaja, GastoOperativo, MetodoPago } from '@/types';
 
 const LUNES = new Date('2026-08-03T00:00:00');
 const DOMINGO = new Date('2026-08-09T23:59:59.999');
@@ -26,6 +27,15 @@ const ventaLegacy = (id: string, fecha: Date, metodoPago: MetodoPago, total: num
   cantidadVendida: 1,
   precioVentaFinal: total,
   gananciaNeta: total - 2,
+});
+
+const gasto = (id: string, fecha: Date, metodoPago: MetodoPago, monto: number): GastoOperativo => ({
+  id,
+  descripcion: 'Gasto de prueba',
+  monto,
+  categoria: 'Servicios',
+  metodoPago,
+  fecha: fecha.toISOString(),
 });
 
 const retiro = (id: string, fecha: Date, metodoPago: MetodoPago, monto: number): RetiroCaja => ({
@@ -102,37 +112,53 @@ describe('sumarMontos', () => {
 });
 
 describe('calcularResumenCaja', () => {
-  it('calcula ventas, retiros y saldo por método (ventas - retiros)', () => {
+  it('calcula ventas, retiros, gastos y saldo por método (ventas - retiros - gastos)', () => {
     const ventas = [
       ventaLegacy('v1', LUNES, 'Efectivo', 100),
       ventaLegacy('v2', LUNES, 'Binance', 50),
       ventaLegacy('v3', LUNES, 'Efectivo', 200, true),
     ];
     const retiros = [retiro('r1', LUNES, 'Efectivo', 30), retiro('r2', LUNES, 'Binance', 10)];
+    const gastos = [gasto('g1', LUNES, 'Efectivo', 20), gasto('g2', LUNES, 'Binance', 5)];
 
-    const res = calcularResumenCaja(ventas, retiros, LUNES, DOMINGO);
+    const res = calcularResumenCaja(ventas, retiros, gastos, LUNES, DOMINGO);
 
     expect(res.ventas.Efectivo).toBe(100);
     expect(res.ventas.Binance).toBe(50);
     expect(res.retiros.Efectivo).toBe(30);
     expect(res.retiros.Binance).toBe(10);
-    expect(res.saldo.Efectivo).toBe(70);
-    expect(res.saldo.Binance).toBe(40);
+    expect(res.gastos.Efectivo).toBe(20);
+    expect(res.gastos.Binance).toBe(5);
+    expect(res.saldo.Efectivo).toBe(50);
+    expect(res.saldo.Binance).toBe(35);
     expect(res.saldo.Transferencia).toBe(0);
     expect(res.totalVentas).toBe(150);
     expect(res.totalRetiros).toBe(40);
-    expect(res.totalSaldo).toBe(110);
+    expect(res.totalGastos).toBe(25);
+    expect(res.totalSaldo).toBe(85);
   });
 
-  it('permite saldo negativo si los retiros superan las ventas', () => {
+  it('permite saldo negativo si los retiros y gastos superan las ventas', () => {
     const res = calcularResumenCaja(
       [ventaLegacy('v1', LUNES, 'Efectivo', 10)],
       [retiro('r1', LUNES, 'Efectivo', 25)],
+      [gasto('g1', LUNES, 'Efectivo', 10)],
       LUNES,
       DOMINGO
     );
-    expect(res.saldo.Efectivo).toBe(-15);
-    expect(res.totalSaldo).toBe(-15);
+    expect(res.saldo.Efectivo).toBe(-25);
+    expect(res.totalSaldo).toBe(-25);
+  });
+
+  it('ignora gastos fuera del rango de la semana', () => {
+    const res = calcularResumenCaja(
+      [ventaLegacy('v1', LUNES, 'Efectivo', 100)],
+      [],
+      [gasto('g1', FUERA, 'Efectivo', 999)],
+      LUNES,
+      DOMINGO
+    );
+    expect(res.saldo.Efectivo).toBe(100);
   });
 
   it('usa totalUSD para ventas multi-producto', () => {
@@ -152,8 +178,22 @@ describe('calcularResumenCaja', () => {
       precioVentaFinal: 30,
       gananciaNeta: 10,
     };
-    const res = calcularResumenCaja([ventaMulti], [], LUNES, DOMINGO);
+    const res = calcularResumenCaja([ventaMulti], [], [], LUNES, DOMINGO);
     expect(res.ventas['Pago Móvil']).toBe(50);
+  });
+});
+
+describe('agruparGastosPorMetodo', () => {
+  it('agrupa gastos del rango por método', () => {
+    const gastos = [
+      gasto('g1', LUNES, 'Efectivo', 20),
+      gasto('g2', DOMINGO, 'Efectivo', 15),
+      gasto('g3', FUERA, 'Efectivo', 999),
+      gasto('g4', LUNES, 'Binance', 8),
+    ];
+    const res = agruparGastosPorMetodo(gastos, LUNES, DOMINGO);
+    expect(res.Efectivo).toBe(35);
+    expect(res.Binance).toBe(8);
   });
 });
 

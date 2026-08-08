@@ -63,11 +63,13 @@ export default function ModalCierre({ isOpen, onClose, onNotify, semanaInicio, r
         semanaFin: getFinSemana(semanaInicio).toISOString(),
         montosVentas: resumen.ventas,
         montosRetiros: resumen.retiros,
+        montosGastos: resumen.gastos,
         saldoEsperado: resumen.saldo,
         arqueoReal: arqueoNumerico,
         diferencia,
         totalVentas: resumen.totalVentas,
         totalRetiros: resumen.totalRetiros,
+        totalGastos: resumen.totalGastos,
         totalEsperado: resumen.totalSaldo,
         totalArqueo,
         totalDiferencia,
@@ -125,6 +127,7 @@ export default function ModalCierre({ isOpen, onClose, onNotify, semanaInicio, r
                       <th className="p-3 font-medium text-xs text-muted-gray uppercase tracking-wider">Método</th>
                       <th className="p-3 font-medium text-xs text-muted-gray uppercase tracking-wider text-right">Ventas</th>
                       <th className="p-3 font-medium text-xs text-muted-gray uppercase tracking-wider text-right">Retiros</th>
+                      <th className="p-3 font-medium text-xs text-muted-gray uppercase tracking-wider text-right">Gastos</th>
                       <th className="p-3 font-medium text-xs text-muted-gray uppercase tracking-wider text-right">Saldo Esperado</th>
                       <th className="p-3 font-medium text-xs text-muted-gray uppercase tracking-wider text-right">Contado Real</th>
                       <th className="p-3 font-medium text-xs text-muted-gray uppercase tracking-wider text-right">Diferencia</th>
@@ -134,7 +137,7 @@ export default function ModalCierre({ isOpen, onClose, onNotify, semanaInicio, r
                     {METODOS_PAGO.map(({ value, label }) => {
                       const saldo = resumen.saldo[value] ?? 0;
                       const dif = diferencia[value] ?? 0;
-                      const tieneMovimiento = saldo !== 0 || arqueo[value] !== '';
+                      const tieneMovimiento = saldo !== 0 || arqueo[value] !== '' || (resumen.gastos[value] ?? 0) !== 0;
                       if (!tieneMovimiento) return null;
                       return (
                         <tr key={value} className="hover:bg-white/5 transition-colors">
@@ -146,6 +149,7 @@ export default function ModalCierre({ isOpen, onClose, onNotify, semanaInicio, r
                           </td>
                           <td className="p-3 text-sm font-space-grotesk text-muted-gray text-right">${(resumen.ventas[value] ?? 0).toFixed(2)}</td>
                           <td className="p-3 text-sm font-space-grotesk text-neon-amber text-right">-${(resumen.retiros[value] ?? 0).toFixed(2)}</td>
+                          <td className="p-3 text-sm font-space-grotesk text-alert-coral text-right">-${(resumen.gastos[value] ?? 0).toFixed(2)}</td>
                           <td className="p-3 text-sm font-space-grotesk font-bold text-polar-white text-right">${saldo.toFixed(2)}</td>
                           <td className="p-3 text-right">
                             <input
@@ -166,7 +170,7 @@ export default function ModalCierre({ isOpen, onClose, onNotify, semanaInicio, r
                       );
                     })}
                     <tr className="border-t border-white/10 bg-white/5">
-                      <td colSpan={3} className="p-3 text-sm font-bold text-polar-white text-right">Totales</td>
+                      <td colSpan={4} className="p-3 text-sm font-bold text-polar-white text-right">Totales</td>
                       <td className="p-3 text-sm font-space-grotesk font-bold text-polar-white text-right">${resumen.totalSaldo.toFixed(2)}</td>
                       <td className="p-3 text-sm font-space-grotesk font-bold text-polar-white text-right">${totalArqueo.toFixed(2)}</td>
                       <td className={`p-3 text-sm font-space-grotesk font-bold text-right ${totalDiferencia >= 0 ? 'text-cashflow-emerald' : 'text-alert-coral'}`}>

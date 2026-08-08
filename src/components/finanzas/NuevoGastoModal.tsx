@@ -5,7 +5,8 @@ import { useTienda } from '@/context/TiendaContext';
 import { X, Receipt } from 'lucide-react';
 import Select from '@/components/shared/Select';
 import { MensajeToast } from '@/components/shared/Toast';
-import { CategoriaGasto } from '@/types';
+import { CategoriaGasto, MetodoPago } from '@/types';
+import { METODOS_PAGO } from '@/utils/caja';
 
 interface Props {
   isOpen: boolean;
@@ -21,6 +22,7 @@ export default function NuevoGastoModal({ isOpen, onClose, onNotify }: Props) {
     descripcion: '',
     monto: '',
     categoria: 'Suministros' as 'Alquiler' | 'Sueldos' | 'Servicios' | 'Publicidad' | 'Reparaciones' | 'Envíos' | 'Suministros' | 'Otros',
+    metodoPago: 'Efectivo' as MetodoPago,
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -31,10 +33,11 @@ export default function NuevoGastoModal({ isOpen, onClose, onNotify }: Props) {
       await registrarGasto({
         descripcion: formData.descripcion,
         monto: Number(formData.monto),
-        categoria: formData.categoria
+        categoria: formData.categoria,
+        metodoPago: formData.metodoPago,
       });
       
-      setFormData({ descripcion: '', monto: '', categoria: 'Suministros' });
+      setFormData({ descripcion: '', monto: '', categoria: 'Suministros', metodoPago: 'Efectivo' });
       onClose();
       onNotify?.({ title: 'Gasto registrado con éxito', type: 'success' });
     } catch (error) {
@@ -93,6 +96,16 @@ export default function NuevoGastoModal({ isOpen, onClose, onNotify }: Props) {
                   accentColor="coral"
                 />
               </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-muted-gray">Método de Pago (descuenta de la caja)</label>
+              <Select
+                value={formData.metodoPago}
+                onChange={v => setFormData({ ...formData, metodoPago: v as MetodoPago })}
+                options={METODOS_PAGO.map(m => ({ value: m.value, label: m.label }))}
+                accentColor="coral"
+              />
             </div>
             
           </form>

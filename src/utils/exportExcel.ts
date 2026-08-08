@@ -590,6 +590,7 @@ export const exportarCierreExcel = async (
     { header: 'Ventas ($)', key: 'ventasUSD', width: 16 },
     { header: 'Ventas (Bs)', key: 'ventasBS', width: 18 },
     { header: 'Retiros ($)', key: 'retirosUSD', width: 16 },
+    { header: 'Gastos ($)', key: 'gastosUSD', width: 16 },
     { header: 'Saldo Esperado ($)', key: 'saldoUSD', width: 20 },
     { header: 'Contado Real ($)', key: 'arqueoUSD', width: 18 },
     { header: 'Diferencia ($)', key: 'diferenciaUSD', width: 18 },
@@ -600,16 +601,18 @@ export const exportarCierreExcel = async (
   METODOS_PAGO.forEach(({ value, label }) => {
     const ventas = cierre.montosVentas?.[value] ?? 0;
     const retiros = cierre.montosRetiros?.[value] ?? 0;
+    const gastos = cierre.montosGastos?.[value] ?? 0;
     const saldo = cierre.saldoEsperado?.[value] ?? 0;
     const arqueo = cierre.arqueoReal?.[value] ?? 0;
     const diferencia = cierre.diferencia?.[value] ?? 0;
-    if (ventas === 0 && retiros === 0 && arqueo === 0) return;
+    if (ventas === 0 && retiros === 0 && gastos === 0 && arqueo === 0) return;
 
     const row = ws.addRow({
       metodo: label,
       ventasUSD: ventas,
       ventasBS: ventas * tasa,
       retirosUSD: retiros,
+      gastosUSD: gastos,
       saldoUSD: saldo,
       arqueoUSD: arqueo,
       diferenciaUSD: diferencia,
@@ -618,6 +621,7 @@ export const exportarCierreExcel = async (
     row.getCell('ventasUSD').numFmt = '"$"#,##0.00';
     row.getCell('ventasBS').numFmt = '"Bs. "#,##0.00';
     row.getCell('retirosUSD').numFmt = '"$"#,##0.00';
+    row.getCell('gastosUSD').numFmt = '"$"#,##0.00';
     row.getCell('saldoUSD').numFmt = '"$"#,##0.00';
     row.getCell('arqueoUSD').numFmt = '"$"#,##0.00';
     row.getCell('diferenciaUSD').numFmt = '"$"#,##0.00';
@@ -632,6 +636,7 @@ export const exportarCierreExcel = async (
     ventasUSD: cierre.totalVentas ?? 0,
     ventasBS: (cierre.totalVentas ?? 0) * tasa,
     retirosUSD: cierre.totalRetiros ?? 0,
+    gastosUSD: cierre.totalGastos ?? 0,
     saldoUSD: cierre.totalEsperado ?? 0,
     arqueoUSD: cierre.totalArqueo ?? 0,
     diferenciaUSD: cierre.totalDiferencia ?? 0,
@@ -640,6 +645,7 @@ export const exportarCierreExcel = async (
   totalRow.getCell('ventasUSD').numFmt = '"$"#,##0.00';
   totalRow.getCell('ventasBS').numFmt = '"Bs. "#,##0.00';
   totalRow.getCell('retirosUSD').numFmt = '"$"#,##0.00';
+  totalRow.getCell('gastosUSD').numFmt = '"$"#,##0.00';
   totalRow.getCell('saldoUSD').numFmt = '"$"#,##0.00';
   totalRow.getCell('arqueoUSD').numFmt = '"$"#,##0.00';
   totalRow.getCell('diferenciaUSD').numFmt = '"$"#,##0.00';

@@ -90,6 +90,7 @@ export interface GastoOperativo {
   descripcion: string;  // Descripción del gasto operativo
   monto: number;        // Egreso en USD
   categoria: CategoriaGasto;
+  metodoPago: MetodoPago;  // Método del que sale el dinero (descuenta de la caja)
   fecha: string;        // ISO String
 }
 
@@ -122,11 +123,13 @@ export interface CierreCaja {
   semanaFin: string;             // Domingo 23:59:59.999
   montosVentas: MontosPorMetodo; // Ventas agrupadas por método
   montosRetiros: MontosPorMetodo;// Retiros agrupados por método
-  saldoEsperado: MontosPorMetodo;// ventas - retiros por método
+  montosGastos?: MontosPorMetodo;// Gastos agrupados por método (cierres anteriores a 2026-08-08 no lo tienen)
+  saldoEsperado: MontosPorMetodo;// ventas - retiros - gastos por método
   arqueoReal: MontosPorMetodo;   // Monto contado físicamente por método
   diferencia: MontosPorMetodo;   // arqueoReal - saldoEsperado (puede ser negativo)
   totalVentas: number;
   totalRetiros: number;
+  totalGastos?: number; // Total de gastos de la semana (cierres anteriores a 2026-08-08 no lo tienen)
   totalEsperado: number;
   totalArqueo: number;
   totalDiferencia: number;

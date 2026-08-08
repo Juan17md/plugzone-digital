@@ -74,10 +74,11 @@ service cloud.firestore {
       allow delete: if isOwner();
 
       allow create, update: if isOwner()
-        && request.resource.data.keys().hasAll(['descripcion', 'monto', 'categoria', 'fecha'])
+        && request.resource.data.keys().hasAll(['descripcion', 'monto', 'categoria', 'metodoPago', 'fecha'])
         && request.resource.data.descripcion is string
         && request.resource.data.monto is number
         && request.resource.data.categoria in ['Alquiler', 'Sueldos', 'Servicios', 'Publicidad', 'Reparaciones', 'Envíos', 'Suministros', 'Otros']
+        && request.resource.data.metodoPago in ['Efectivo', 'Pago Móvil', 'Transferencia', 'Punto', 'Zelle', 'Binance']
         && request.resource.data.fecha is string
         && request.resource.data.monto >= 0;
     }

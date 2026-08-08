@@ -706,6 +706,7 @@ export const exportarCierrePdf = async (
     body: [
       ['Ventas Totales de la Semana', `$${(cierre.totalVentas ?? 0).toFixed(2)}`, `Bs. ${((cierre.totalVentas ?? 0) * tasa).toFixed(2)}`],
       ['Retiros Totales de la Semana', `$${(cierre.totalRetiros ?? 0).toFixed(2)}`, `Bs. ${((cierre.totalRetiros ?? 0) * tasa).toFixed(2)}`],
+      ['Gastos Totales de la Semana', `$${(cierre.totalGastos ?? 0).toFixed(2)}`, `Bs. ${((cierre.totalGastos ?? 0) * tasa).toFixed(2)}`],
       ['Saldo Esperado en Caja', `$${(cierre.totalEsperado ?? 0).toFixed(2)}`, `Bs. ${((cierre.totalEsperado ?? 0) * tasa).toFixed(2)}`],
       ['Contado Real (Arqueo)', `$${(cierre.totalArqueo ?? 0).toFixed(2)}`, `Bs. ${((cierre.totalArqueo ?? 0) * tasa).toFixed(2)}`],
       ['DIFERENCIA TOTAL', `$${diferenciaTotal.toFixed(2)}`, `Bs. ${(diferenciaTotal * tasa).toFixed(2)}`],
@@ -727,7 +728,7 @@ export const exportarCierrePdf = async (
       2: { halign: 'right', cellWidth: 48 },
     },
     didParseCell: (data) => {
-      if (data.section === 'body' && data.row.index === 4) {
+      if (data.section === 'body' && data.row.index === 5) {
         data.cell.styles.fontStyle = 'bold';
         data.cell.styles.fillColor = [241, 245, 249];
         if (data.column.index > 0) {
@@ -743,20 +744,22 @@ export const exportarCierrePdf = async (
   doc.setFontSize(11);
   doc.setTextColor(15, 23, 42);
   doc.text('2. Desglose por Método de Pago', 14, finalY1);
-
   const bodyFilas: string[][] = [];
 
   METODOS_PAGO.forEach(({ value, label }) => {
     const ventas = cierre.montosVentas?.[value] ?? 0;
     const retiros = cierre.montosRetiros?.[value] ?? 0;
+    const gastos = cierre.montosGastos?.[value] ?? 0;
     const saldo = cierre.saldoEsperado?.[value] ?? 0;
     const arqueo = cierre.arqueoReal?.[value] ?? 0;
     const diferencia = cierre.diferencia?.[value] ?? 0;
-    if (ventas === 0 && retiros === 0 && arqueo === 0) return;
+    if (ventas === 0 && retiros === 0 && gastos === 0 && arqueo === 0) return;
+
     bodyFilas.push([
       label,
       `$${ventas.toFixed(2)}`,
       `$${retiros.toFixed(2)}`,
+      `$${gastos.toFixed(2)}`,
       `$${saldo.toFixed(2)}`,
       `$${arqueo.toFixed(2)}`,
       `${diferencia > 0 ? '+' : ''}$${diferencia.toFixed(2)}`,
@@ -765,10 +768,10 @@ export const exportarCierrePdf = async (
 
   autoTable(doc, {
     startY: finalY1 + 4,
-    head: [['Método', 'Ventas ($)', 'Retiros ($)', 'Saldo Esperado ($)', 'Contado Real ($)', 'Diferencia ($)']],
+    head: [['Método', 'Ventas ($)', 'Retiros ($)', 'Gastos ($)', 'Saldo Esperado ($)', 'Contado Real ($)', 'Diferencia ($)']],
     body: bodyFilas.length > 0
       ? bodyFilas
-      : [['-', '-', '-', '-', 'Sin movimientos en esta semana', '-']],
+      : [['-', '-', '-', '-', '-', 'Sin movimientos en esta semana', '-']],
     styles: { font: 'Helvetica', overflow: 'linebreak', cellPadding: 2, valign: 'middle' },
     headStyles: {
       fillColor: [15, 23, 42],
@@ -781,12 +784,13 @@ export const exportarCierrePdf = async (
       textColor: [30, 41, 59],
     },
     columnStyles: {
-      0: { cellWidth: 38 },
-      1: { halign: 'right', cellWidth: 26 },
-      2: { halign: 'right', cellWidth: 26 },
-      3: { halign: 'right', cellWidth: 32 },
-      4: { halign: 'right', cellWidth: 32 },
-      5: { halign: 'right', cellWidth: 28 },
+      0: { cellWidth: 32 },
+      1: { halign: 'right', cellWidth: 23 },
+      2: { halign: 'right', cellWidth: 23 },
+      3: { halign: 'right', cellWidth: 23 },
+      4: { halign: 'right', cellWidth: 29 },
+      5: { halign: 'right', cellWidth: 29 },
+      6: { halign: 'right', cellWidth: 24 },
     },
   });
 

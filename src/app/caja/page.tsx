@@ -5,7 +5,7 @@ import { useTienda } from '@/context/TiendaContext';
 import { CierreCaja, RetiroCaja } from '@/types';
 import {
   Wallet, TrendingUp, TrendingDown, Plus, Trash2, ClipboardCheck,
-  ChevronLeft, ChevronRight, ArrowDownRight, Minus,
+  ChevronLeft, ChevronRight, ArrowDownRight, Minus, Receipt,
 } from 'lucide-react';
 import { getInicioSemana, getSemanaAnterior, getSemanaSiguiente, formatearSemana, esSemanaActual } from '@/utils/fechas';
 import { METODOS_PAGO, METODO_COLORS, calcularResumenCaja, nombreMetodo } from '@/utils/caja';
@@ -18,7 +18,7 @@ import { exportarCierreExcel } from '@/utils/exportExcel';
 import { exportarCierrePdf } from '@/utils/exportPdf';
 
 export default function CajaPage() {
-  const { ventas, retiros, cierres, tasaBCV, eliminarRetiro } = useTienda();
+  const { ventas, retiros, gastos, cierres, tasaBCV, eliminarRetiro } = useTienda();
 
   const [semanaSeleccionada, setSemanaSeleccionada] = useState(() => getInicioSemana(new Date()));
   const [modalRetiroOpen, setModalRetiroOpen] = useState(false);
@@ -45,8 +45,8 @@ export default function CajaPage() {
   const resumen = useMemo(() => {
     const finSemana = new Date(inicioSemana);
     finSemana.setDate(finSemana.getDate() + 7);
-    return calcularResumenCaja(ventas, retiros, inicioSemana, finSemana);
-  }, [ventas, retiros, inicioSemana]);
+    return calcularResumenCaja(ventas, retiros, gastos, inicioSemana, finSemana);
+  }, [ventas, retiros, gastos, inicioSemana]);
 
   const cierreDeSemana = useMemo(
     () => cierres.find(c => c.semanaInicio === claveSemana) ?? null,
@@ -229,7 +229,7 @@ export default function CajaPage() {
       </div>
 
       {/* Grid de KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <div className="glass-panel p-5 md:p-6 rounded-2xl">
           <div className="flex items-start justify-between">
             <div className="min-w-0">
@@ -261,11 +261,25 @@ export default function CajaPage() {
         <div className="glass-panel p-5 md:p-6 rounded-2xl">
           <div className="flex items-start justify-between">
             <div className="min-w-0">
+              <p className="text-xs sm:text-sm font-medium text-muted-gray mb-1">Gastos de la Semana</p>
+              <h3 className="font-space-grotesk font-bold text-xl sm:text-2xl text-alert-coral truncate">
+                ${resumen.totalGastos.toFixed(2)}
+              </h3>
+            </div>
+            <div className="p-2.5 sm:p-3 rounded-xl bg-alert-coral/10 text-alert-coral shrink-0 ml-3">
+              <Receipt size={18} />
+            </div>
+          </div>
+        </div>
+
+        <div className="glass-panel p-5 md:p-6 rounded-2xl">
+          <div className="flex items-start justify-between">
+            <div className="min-w-0">
               <p className="text-xs sm:text-sm font-medium text-muted-gray mb-1">Saldo Disponible Total</p>
               <h3 className="font-space-grotesk font-bold text-xl sm:text-2xl text-polar-white truncate">
                 ${resumen.totalSaldo.toFixed(2)}
               </h3>
-              <p className="text-[10px] text-muted-gray mt-0.5">Ventas − Retiros</p>
+              <p className="text-[10px] text-muted-gray mt-0.5">Ventas − Retiros − Gastos</p>
             </div>
             <div className="p-2.5 sm:p-3 rounded-xl bg-electric-cyan/10 text-electric-cyan shrink-0 ml-3">
               <Wallet size={18} />
@@ -281,8 +295,9 @@ export default function CajaPage() {
           {METODOS_PAGO.map(({ value, label }) => {
             const ventasMetodo = resumen.ventas[value] ?? 0;
             const retirosMetodo = resumen.retiros[value] ?? 0;
+            const gastosMetodo = resumen.gastos[value] ?? 0;
             const saldoMetodo = resumen.saldo[value] ?? 0;
-            const sinMovimiento = ventasMetodo === 0 && retirosMetodo === 0;
+            const sinMovimiento = ventasMetodo === 0 && retirosMetodo === 0 && gastosMetodo === 0;
             return (
               <div key={value} className={`glass-panel p-5 rounded-2xl transition-all duration-300 ${sinMovimiento ? 'opacity-60' : ''}`}>
                 <div className="flex items-center gap-2.5 mb-3">
@@ -300,6 +315,10 @@ export default function CajaPage() {
                   <span className="flex justify-between text-muted-gray">
                     <span className="flex items-center gap-1"><TrendingDown size={12} className="text-neon-amber" /> Retiros</span>
                     <span className="font-space-grotesk text-neon-amber">-${retirosMetodo.toFixed(2)}</span>
+                  </span>
+                  <span className="flex justify-between text-muted-gray">
+                    <span className="flex items-center gap-1"><Receipt size={12} className="text-alert-coral" /> Gastos</span>
+                    <span className="font-space-grotesk text-alert-coral">-${gastosMetodo.toFixed(2)}</span>
                   </span>
                 </div>
               </div>
