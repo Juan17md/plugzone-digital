@@ -60,7 +60,12 @@ service cloud.firestore {
         && request.resource.data.gananciaNeta is number
         && request.resource.data.fecha is string
         && request.resource.data.cantidadVendida >= 0
-        && request.resource.data.precioVentaFinal >= 0;
+        && request.resource.data.precioVentaFinal >= 0
+        && request.resource.data.gananciaNeta >= 0
+        // Formato multi-producto (opcional en ventas legacy): si existe, debe ser válido
+        && (!request.resource.data.keys().hasAny(['totalUSD']) || (request.resource.data.totalUSD is number && request.resource.data.totalUSD >= 0))
+        && (!request.resource.data.keys().hasAny(['gananciaNetaTotal']) || (request.resource.data.gananciaNetaTotal is number && request.resource.data.gananciaNetaTotal >= 0))
+        && (!request.resource.data.keys().hasAny(['items']) || (request.resource.data.items is list && request.resource.data.items.size() >= 1));
     }
 
     // 📉 REGLAS PARA GASTOS

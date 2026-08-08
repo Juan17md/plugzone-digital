@@ -7,7 +7,7 @@ import { db, app } from '@/services/firebase';
 import { Producto, Venta, ItemVenta, GastoOperativo, RolUsuario, Usuario, MetodoPago, RetiroCaja, CierreCaja, esVentaMultiProducto } from '@/types';
 import { obtenerMensajeError } from '@/utils/errores';
 
-interface TiendaState {
+export interface TiendaState {
   isOffline: boolean;
   user: User | null;
   authLoading: boolean;
