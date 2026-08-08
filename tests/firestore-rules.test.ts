@@ -5,7 +5,8 @@ import { readFileSync } from 'fs';
 // El test solo corre cuando la CLI levanta el emulador (firebase emulators:exec)
 const HOST_PUERTO_EMULADOR = process.env.FIRESTORE_EMULATOR_HOST ?? process.env.FIREBASE_FIRESTORE_EMULATOR_HOST ?? '';
 const CON_EMULADOR = HOST_PUERTO_EMULADOR.length > 0;
-const [HOST_EMULADOR = '127.0.0.1', PUERTO_EMULADOR = '8080'] = HOST_PUERTO_EMULADOR.split(':');
+const [HOST_EMULADOR = '127.0.0.1', PUERTO_EMULADOR_STR = '8080'] = HOST_PUERTO_EMULADOR.split(':');
+const PUERTO_EMULADOR = Number(PUERTO_EMULADOR_STR);
 
 const PROYECTO = 'plugzone-digital';
 

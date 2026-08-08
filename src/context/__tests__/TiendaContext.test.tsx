@@ -1,19 +1,40 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, waitFor } from '@testing-library/react';
+import { useEffect } from 'react';
 import { TiendaProvider, useTienda } from '@/context/TiendaContext';
 import { TiendaState } from '@/context/TiendaContext';
 
+interface RefSimulada {
+  tipo?: string;
+  __nombre?: string;
+  coleccion?: string;
+  id?: string;
+}
+
+interface SnapSimulada {
+  exists?: () => boolean;
+  data?: () => Record<string, unknown>;
+  docs?: { id: string; data: () => Record<string, unknown> }[];
+}
+
+interface TransaccionSimulada {
+  get: ReturnType<typeof vi.fn>;
+  update: ReturnType<typeof vi.fn>;
+  set: ReturnType<typeof vi.fn>;
+}
+
 const mocks = vi.hoisted(() => {
-  const crearSnapshot = (docs: { id: string; data: Record<string, unknown> }[]) => ({
+  const crearSnapshot = (docs: { id: string; data: Record<string, unknown> }[]): SnapSimulada => ({
     docs: docs.map(d => ({ id: d.id, data: () => d.data })),
   });
 
-  const onSnapshot = vi.fn((ref: any, cb: (snap: any) => void) => {
-    if (ref?.tipo === 'doc') {
+  const onSnapshot = vi.fn((ref: unknown, cb: (snap: SnapSimulada) => void) => {
+    const r = ref as RefSimulada;
+    if (r?.tipo === 'doc') {
       cb({ exists: () => true, data: () => ({ rol: 'operador', bloqueado: false, primerInicio: false }) });
-    } else if (ref?.__nombre === 'retiros') {
+    } else if (r?.__nombre === 'retiros') {
       cb(crearSnapshot([{ id: 'r1', data: { metodoPago: 'Efectivo', monto: 20, concepto: 'Pago proveedor', fecha: '2026-08-03T10:00:00' } }]));
-    } else if (ref?.__nombre === 'cierres') {
+    } else if (r?.__nombre === 'cierres') {
       cb(crearSnapshot([{ id: '2026-08-03T00:00:00.000Z', data: { semanaInicio: '2026-08-03T00:00:00.000Z', totalEsperado: 100 } }]));
     } else {
       cb(crearSnapshot([]));
@@ -28,12 +49,13 @@ const mocks = vi.hoisted(() => {
     updateDoc: vi.fn(),
     runTransaction: vi.fn(),
     onSnapshot,
-    collection: vi.fn((_db: unknown, nombre: string) => ({ __nombre: nombre })),
-    query: vi.fn((ref: any) => ref),
+    collection: vi.fn((_db: unknown, nombre: string): RefSimulada => ({ __nombre: nombre })),
+    query: vi.fn((ref: unknown) => ref),
     orderBy: vi.fn(),
-    doc: vi.fn((ref: any, coleccion?: string, id?: string) => {
+    doc: vi.fn((ref: unknown, coleccion?: string, id?: string): RefSimulada => {
       if (typeof ref === 'string') return { tipo: 'doc', coleccion: ref, id };
-      return { tipo: 'doc', coleccion: ref?.__nombre ?? coleccion, id };
+      const r = ref as RefSimulada;
+      return { tipo: 'doc', coleccion: r?.__nombre ?? coleccion, id };
     }),
     getAuth: vi.fn(() => ({})),
     getIdToken: vi.fn(async () => 'token-falso'),
@@ -68,13 +90,25 @@ vi.mock('@/services/firebase', () => ({
   app: {},
 }));
 
-let tienda: TiendaState;
+const captura: { tienda: TiendaState | null } = { tienda: null };
+
 function Captura() {
-  tienda = useTienda();
+  const tienda = useTienda();
+  useEffect(() => {
+    captura.tienda = tienda;
+  }, [tienda]);
   return null;
 }
 
 const renderProvider = () => render(<TiendaProvider><Captura /></TiendaProvider>);
+
+const obtenerTienda = async (): Promise<TiendaState> => {
+  renderProvider();
+  await waitFor(() => {
+    expect(captura.tienda).not.toBeNull();
+  });
+  return captura.tienda as TiendaState;
+};
 
 describe('TiendaContext - Módulo de Caja', () => {
   beforeEach(() => {
@@ -85,7 +119,7 @@ describe('TiendaContext - Módulo de Caja', () => {
   });
 
   it('carga retiros y cierres en tiempo real desde Firestore', async () => {
-    renderProvider();
+    const tienda = await obtenerTienda();
     await waitFor(() => {
       expect(tienda.retiros).toHaveLength(1);
       expect(tienda.cierres).toHaveLength(1);
@@ -96,8 +130,7 @@ describe('TiendaContext - Módulo de Caja', () => {
   });
 
   it('registrarRetiro crea el documento con fecha actual y datos del retiro', async () => {
-    renderProvider();
-    await waitFor(() => expect(tienda.registrarRetiro).toBeDefined());
+    const tienda = await obtenerTienda();
 
     await tienda.registrarRetiro({ metodoPago: 'Binance', monto: 45, concepto: 'Pago a proveedor', registradoPor: 'u1', registradoPorEmail: 'juan@plugzone.com' });
 
@@ -110,8 +143,7 @@ describe('TiendaContext - Módulo de Caja', () => {
   });
 
   it('eliminarRetiro borra el documento por id', async () => {
-    renderProvider();
-    await waitFor(() => expect(tienda.eliminarRetiro).toBeDefined());
+    const tienda = await obtenerTienda();
 
     await tienda.eliminarRetiro('r1');
 
@@ -121,8 +153,7 @@ describe('TiendaContext - Módulo de Caja', () => {
   });
 
   it('guardarCierre usa setDoc con id = semanaInicio (idempotente)', async () => {
-    renderProvider();
-    await waitFor(() => expect(tienda.guardarCierre).toBeDefined());
+    const tienda = await obtenerTienda();
 
     const cierre = {
       semanaInicio: '2026-08-03T00:00:00.000Z',
@@ -151,8 +182,7 @@ describe('TiendaContext - Módulo de Caja', () => {
   });
 
   it('guardarCierre sobrescribe el mismo id (sin duplicar la semana)', async () => {
-    renderProvider();
-    await waitFor(() => expect(tienda.guardarCierre).toBeDefined());
+    const tienda = await obtenerTienda();
 
     const base = {
       semanaInicio: '2026-08-03T00:00:00.000Z',
@@ -182,20 +212,12 @@ describe('TiendaContext - Ventas', () => {
     mocks.runTransaction.mockReset();
   });
 
-  it('registrarVenta valida carrito vacío', async () => {
-    renderProvider();
-    await waitFor(() => expect(tienda.registrarVenta).toBeDefined());
-
-    await expect(tienda.registrarVenta({ items: [], metodoPago: 'Binance' })).rejects.toThrow('Debe agregar al menos un producto');
-    expect(mocks.runTransaction).not.toHaveBeenCalled();
-  });
-
-  it('registrarVenta decrementa stock y crea la venta con ganancia calculada', async () => {
-    mocks.runTransaction.mockImplementation(async (_db: unknown, cb: (t: any) => Promise<void>) => {
-      const transaccion = {
+  const mockTransaccion = (stockActual: number) => {
+    mocks.runTransaction.mockImplementation(async (_db: unknown, cb: (t: TransaccionSimulada) => Promise<void>) => {
+      const transaccion: TransaccionSimulada = {
         get: vi.fn().mockResolvedValue({
           exists: () => true,
-          data: () => ({ stockActual: 10, costoCompra: 5 }),
+          data: () => ({ stockActual, costoCompra: 5 }),
         }),
         update: vi.fn(),
         set: vi.fn(),
@@ -203,9 +225,18 @@ describe('TiendaContext - Ventas', () => {
       await cb(transaccion);
       return transaccion;
     });
+  };
 
-    renderProvider();
-    await waitFor(() => expect(tienda.registrarVenta).toBeDefined());
+  it('registrarVenta valida carrito vacío', async () => {
+    const tienda = await obtenerTienda();
+
+    await expect(tienda.registrarVenta({ items: [], metodoPago: 'Binance' })).rejects.toThrow('Debe agregar al menos un producto');
+    expect(mocks.runTransaction).not.toHaveBeenCalled();
+  });
+
+  it('registrarVenta decrementa stock y crea la venta con ganancia calculada', async () => {
+    mockTransaccion(10);
+    const tienda = await obtenerTienda();
 
     await tienda.registrarVenta({
       items: [{ productoId: 'p1', nombreProducto: 'Cargador', cantidadVendida: 2, precioVentaFinal: 15 }],
@@ -213,7 +244,7 @@ describe('TiendaContext - Ventas', () => {
       nombreCliente: 'Cliente A',
     });
 
-    const transaccion = await mocks.runTransaction.mock.results[0].value;
+    const transaccion = (await mocks.runTransaction.mock.results[0].value) as TransaccionSimulada;
     expect(transaccion.update).toHaveBeenCalledWith(
       expect.objectContaining({ tipo: 'doc', coleccion: 'productos', id: 'p1' }),
       { stockActual: 8 }
@@ -230,21 +261,8 @@ describe('TiendaContext - Ventas', () => {
   });
 
   it('registrarVenta rechaza cuando el stock no alcanza', async () => {
-    mocks.runTransaction.mockImplementation(async (_db: unknown, cb: (t: any) => Promise<void>) => {
-      const transaccion = {
-        get: vi.fn().mockResolvedValue({
-          exists: () => true,
-          data: () => ({ stockActual: 1, costoCompra: 5 }),
-        }),
-        update: vi.fn(),
-        set: vi.fn(),
-      };
-      await cb(transaccion);
-      return transaccion;
-    });
-
-    renderProvider();
-    await waitFor(() => expect(tienda.registrarVenta).toBeDefined());
+    mockTransaccion(1);
+    const tienda = await obtenerTienda();
 
     await expect(
       tienda.registrarVenta({
