@@ -23,6 +23,7 @@ const METODO_COLORS: Record<string, string> = {
   Tarjeta: '#8B5CF6',
   Punto: '#F472B6',
   Zelle: '#6366F1',
+  Binance: '#F0B90B',
 }
 
 export default function ChartsFinanzas({ ventas, semanaInicio }: Props) {

@@ -15,7 +15,7 @@ export interface Producto {
   almacenamiento?: string; // Almacenamiento interno (opcional para teléfonos)
 }
 
-export type MetodoPago = 'Efectivo' | 'Pago Móvil' | 'Transferencia' | 'Tarjeta' | 'Punto' | 'Zelle';
+export type MetodoPago = 'Efectivo' | 'Pago Móvil' | 'Transferencia' | 'Tarjeta' | 'Punto' | 'Zelle' | 'Binance';
 
 // Representa cada artículo dentro de una venta multi-producto
 export interface ItemVenta {
@@ -102,4 +102,36 @@ export interface Usuario {
   bloqueado: boolean;
   primerInicio: boolean;
   creadoEn: string;
+}
+
+export interface RetiroCaja {
+  id: string;
+  metodoPago: MetodoPago;
+  monto: number;        // Salida en USD
+  concepto?: string;    // Motivo del retiro
+  fecha: string;        // ISO String
+  registradoPor?: string;
+  registradoPorEmail?: string;
+}
+
+export type MontosPorMetodo = Partial<Record<MetodoPago, number>>;
+
+export interface CierreCaja {
+  id: string;                    // Fecha del lunes de la semana (ISO)
+  semanaInicio: string;          // Lunes 00:00:00
+  semanaFin: string;             // Domingo 23:59:59.999
+  montosVentas: MontosPorMetodo; // Ventas agrupadas por método
+  montosRetiros: MontosPorMetodo;// Retiros agrupados por método
+  saldoEsperado: MontosPorMetodo;// ventas - retiros por método
+  arqueoReal: MontosPorMetodo;   // Monto contado físicamente por método
+  diferencia: MontosPorMetodo;   // arqueoReal - saldoEsperado (puede ser negativo)
+  totalVentas: number;
+  totalRetiros: number;
+  totalEsperado: number;
+  totalArqueo: number;
+  totalDiferencia: number;
+  registradoPor?: string;
+  registradoPorEmail?: string;
+  fechaCierre: string;           // ISO String del momento del cierre
+  observaciones?: string;
 }

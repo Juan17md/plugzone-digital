@@ -56,7 +56,7 @@ service cloud.firestore {
         && request.resource.data.nombreProducto is string
         && request.resource.data.cantidadVendida is number
         && request.resource.data.precioVentaFinal is number
-        && request.resource.data.metodoPago in ['Efectivo', 'Pago Móvil', 'Transferencia', 'Tarjeta', 'Punto', 'Zelle']
+        && request.resource.data.metodoPago in ['Efectivo', 'Pago Móvil', 'Transferencia', 'Tarjeta', 'Punto', 'Zelle', 'Binance']
         && request.resource.data.gananciaNeta is number
         && request.resource.data.fecha is string
         && request.resource.data.cantidadVendida >= 0
@@ -75,6 +75,48 @@ service cloud.firestore {
         && request.resource.data.categoria in ['Alquiler', 'Sueldos', 'Servicios', 'Publicidad', 'Reparaciones', 'Envíos', 'Suministros', 'Otros']
         && request.resource.data.fecha is string
         && request.resource.data.monto >= 0;
+    }
+
+    // 💰 REGLAS PARA RETIROS DE CAJA
+    match /retiros/{retiroId} {
+      allow read: if isOwner();
+      allow delete: if isOwner();
+
+      allow create, update: if isOwner()
+        && request.resource.data.keys().hasAll(['metodoPago', 'monto', 'fecha'])
+        && request.resource.data.metodoPago in ['Efectivo', 'Pago Móvil', 'Transferencia', 'Tarjeta', 'Punto', 'Zelle', 'Binance']
+        && request.resource.data.monto is number
+        && request.resource.data.fecha is string
+        && request.resource.data.monto >= 0;
+    }
+
+    // 📆 REGLAS PARA CIERRES DE CAJA (sin borrado: registro contable histórico)
+    match /cierres/{cierreId} {
+      allow read: if isOwner();
+
+      allow create, update: if isOwner()
+        && request.resource.data.keys().hasAll([
+          'semanaInicio', 'semanaFin', 'montosVentas', 'montosRetiros',
+          'saldoEsperado', 'arqueoReal', 'diferencia',
+          'totalVentas', 'totalRetiros', 'totalEsperado', 'totalArqueo', 'totalDiferencia', 'fechaCierre'
+        ])
+        && request.resource.data.semanaInicio is string
+        && request.resource.data.semanaFin is string
+        && request.resource.data.fechaCierre is string
+        && request.resource.data.montosVentas is map
+        && request.resource.data.montosRetiros is map
+        && request.resource.data.saldoEsperado is map
+        && request.resource.data.arqueoReal is map
+        && request.resource.data.diferencia is map
+        && request.resource.data.totalVentas is number
+        && request.resource.data.totalRetiros is number
+        && request.resource.data.totalEsperado is number
+        && request.resource.data.totalArqueo is number
+        && request.resource.data.totalDiferencia is number
+        && request.resource.data.totalVentas >= 0
+        && request.resource.data.totalRetiros >= 0
+        && request.resource.data.totalEsperado >= 0
+        && request.resource.data.totalArqueo >= 0;
     }
   }
 }

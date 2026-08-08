@@ -1,7 +1,8 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { Producto, Venta, GastoOperativo, esVentaMultiProducto } from '@/types';
+import { Producto, Venta, GastoOperativo, CierreCaja, esVentaMultiProducto } from '@/types';
 import { obtenerDescripcionGasto } from '@/utils/gastos';
+import { METODOS_PAGO } from '@/utils/caja';
 
 /**
  * Formatea una fecha ISO a un formato legible en español para los PDF
@@ -666,6 +667,142 @@ export const exportarReporteFinancieroPdf = async (
       4: { halign: 'right', cellWidth: 28 },
     },
   });
+
+  agregarPieDePagina(doc);
+  doc.save(`${nombreArchivo}.pdf`);
+};
+
+// ==========================================
+// EXPORTACIÓN DE CIERRE DE CAJA SEMANAL EN PDF
+// ==========================================
+export const exportarCierrePdf = async (
+  cierre: CierreCaja,
+  semanaTexto: string,
+  tasaBCV: number | null = 1,
+  nombreArchivo: string = 'Cierre_Caja_PlugZone'
+) => {
+  const tasa = tasaBCV ?? 1;
+  const logoBase64 = await cargarLogoBase64();
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+  const diferenciaTotal = cierre.totalDiferencia ?? 0;
+
+  agregarEncabezadoPdf(
+    doc,
+    'Cierre de Caja Semanal',
+    `Período: ${semanaTexto} | Tasa BCV: Bs. ${tasa.toFixed(2)} | Registrado por: ${cierre.registradoPorEmail ?? '—'}`,
+    logoBase64
+  );
+
+  // TABLA 1: RESUMEN GENERAL
+  doc.setFont('Helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(15, 23, 42);
+  doc.text('1. Resumen General', 14, 38);
+
+  autoTable(doc, {
+    startY: 42,
+    head: [['Métrica', 'Monto ($)', 'Monto en Bolívares (Bs)']],
+    body: [
+      ['Ventas Totales de la Semana', `$${(cierre.totalVentas ?? 0).toFixed(2)}`, `Bs. ${((cierre.totalVentas ?? 0) * tasa).toFixed(2)}`],
+      ['Retiros Totales de la Semana', `$${(cierre.totalRetiros ?? 0).toFixed(2)}`, `Bs. ${((cierre.totalRetiros ?? 0) * tasa).toFixed(2)}`],
+      ['Saldo Esperado en Caja', `$${(cierre.totalEsperado ?? 0).toFixed(2)}`, `Bs. ${((cierre.totalEsperado ?? 0) * tasa).toFixed(2)}`],
+      ['Contado Real (Arqueo)', `$${(cierre.totalArqueo ?? 0).toFixed(2)}`, `Bs. ${((cierre.totalArqueo ?? 0) * tasa).toFixed(2)}`],
+      ['DIFERENCIA TOTAL', `$${diferenciaTotal.toFixed(2)}`, `Bs. ${(diferenciaTotal * tasa).toFixed(2)}`],
+    ],
+    styles: { font: 'Helvetica', overflow: 'linebreak', cellPadding: 2, valign: 'middle' },
+    headStyles: {
+      fillColor: [15, 23, 42],
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+      fontSize: 8.5,
+    },
+    bodyStyles: {
+      fontSize: 8.5,
+      textColor: [30, 41, 59],
+    },
+    columnStyles: {
+      0: { cellWidth: 86 },
+      1: { halign: 'right', cellWidth: 48 },
+      2: { halign: 'right', cellWidth: 48 },
+    },
+    didParseCell: (data) => {
+      if (data.section === 'body' && data.row.index === 4) {
+        data.cell.styles.fontStyle = 'bold';
+        data.cell.styles.fillColor = [241, 245, 249];
+        if (data.column.index > 0) {
+          data.cell.styles.textColor = diferenciaTotal >= 0 ? [16, 185, 129] : [239, 68, 68];
+        }
+      }
+    },
+  });
+
+  // TABLA 2: DESGLOSE POR MÉTODO DE PAGO
+  const finalY1 = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
+  doc.setFont('Helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(15, 23, 42);
+  doc.text('2. Desglose por Método de Pago', 14, finalY1);
+
+  const bodyFilas: string[][] = [];
+
+  METODOS_PAGO.forEach(({ value, label }) => {
+    const ventas = cierre.montosVentas?.[value] ?? 0;
+    const retiros = cierre.montosRetiros?.[value] ?? 0;
+    const saldo = cierre.saldoEsperado?.[value] ?? 0;
+    const arqueo = cierre.arqueoReal?.[value] ?? 0;
+    const diferencia = cierre.diferencia?.[value] ?? 0;
+    if (ventas === 0 && retiros === 0 && arqueo === 0) return;
+    bodyFilas.push([
+      label,
+      `$${ventas.toFixed(2)}`,
+      `$${retiros.toFixed(2)}`,
+      `$${saldo.toFixed(2)}`,
+      `$${arqueo.toFixed(2)}`,
+      `${diferencia > 0 ? '+' : ''}$${diferencia.toFixed(2)}`,
+    ]);
+  });
+
+  autoTable(doc, {
+    startY: finalY1 + 4,
+    head: [['Método', 'Ventas ($)', 'Retiros ($)', 'Saldo Esperado ($)', 'Contado Real ($)', 'Diferencia ($)']],
+    body: bodyFilas.length > 0
+      ? bodyFilas
+      : [['-', '-', '-', '-', 'Sin movimientos en esta semana', '-']],
+    styles: { font: 'Helvetica', overflow: 'linebreak', cellPadding: 2, valign: 'middle' },
+    headStyles: {
+      fillColor: [15, 23, 42],
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+      fontSize: 8,
+    },
+    bodyStyles: {
+      fontSize: 7.5,
+      textColor: [30, 41, 59],
+    },
+    columnStyles: {
+      0: { cellWidth: 38 },
+      1: { halign: 'right', cellWidth: 26 },
+      2: { halign: 'right', cellWidth: 26 },
+      3: { halign: 'right', cellWidth: 32 },
+      4: { halign: 'right', cellWidth: 32 },
+      5: { halign: 'right', cellWidth: 28 },
+    },
+  });
+
+  // OBSERVACIONES
+  if (cierre.observaciones) {
+    const finalY2 = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(15, 23, 42);
+    doc.text('Observaciones:', 14, finalY2);
+    doc.setFont('Helvetica', 'normal');
+    doc.setFontSize(8.5);
+    doc.setTextColor(100, 116, 139);
+    const lineas = doc.splitTextToSize(cierre.observaciones, doc.internal.pageSize.width - 28);
+    doc.text(lineas, 14, finalY2 + 6);
+  }
 
   agregarPieDePagina(doc);
   doc.save(`${nombreArchivo}.pdf`);

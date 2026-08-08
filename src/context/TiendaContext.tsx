@@ -1,10 +1,10 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, orderBy, runTransaction, limit } from 'firebase/firestore';
+import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, orderBy, runTransaction, setDoc } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged, getIdToken, User } from 'firebase/auth';
 import { db, app } from '@/services/firebase';
-import { Producto, Venta, ItemVenta, GastoOperativo, RolUsuario, Usuario, MetodoPago, esVentaMultiProducto } from '@/types';
+import { Producto, Venta, ItemVenta, GastoOperativo, RolUsuario, Usuario, MetodoPago, RetiroCaja, CierreCaja, esVentaMultiProducto } from '@/types';
 import { obtenerMensajeError } from '@/utils/errores';
 
 interface TiendaState {
@@ -30,6 +30,13 @@ interface TiendaState {
   registrarGasto: (gasto: Omit<GastoOperativo, 'id' | 'fecha'>) => Promise<void>;
   anularVenta: (id: string) => Promise<void>;
 
+  // Caja
+  retiros: RetiroCaja[];
+  cierres: CierreCaja[];
+  registrarRetiro: (retiro: Omit<RetiroCaja, 'id' | 'fecha'>) => Promise<void>;
+  eliminarRetiro: (id: string) => Promise<void>;
+  guardarCierre: (cierre: Omit<CierreCaja, 'id'>) => Promise<void>;
+
   // Usuarios (solo admin)
   usuarios: Usuario[];
   loadingUsuarios: boolean;
@@ -53,6 +60,8 @@ const defaultState: TiendaState = {
   agregarProducto: async () => {}, actualizarProducto: async () => {}, eliminarProducto: async () => {},
   ventas: [], gastos: [],
   registrarVenta: async () => {}, registrarGasto: async () => {}, anularVenta: async () => {},
+  retiros: [], cierres: [],
+  registrarRetiro: async () => {}, eliminarRetiro: async () => {}, guardarCierre: async () => {},
   usuarios: [], loadingUsuarios: true,
   crearUsuario: async () => ({}), editarUsuario: async () => ({}), cambiarContrasena: async () => ({}), alternarBloqueoUsuario: async () => ({}), actualizarRolUsuario: async () => ({}), eliminarUsuario: async () => ({}),
   tasaBCV: null, fechaTasaBCV: null, loadingTasa: true
@@ -91,6 +100,8 @@ export function TiendaProvider({ children }: { children: React.ReactNode }) {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [ventas, setVentas] = useState<Venta[]>([]);
   const [gastos, setGastos] = useState<GastoOperativo[]>([]);
+  const [retiros, setRetiros] = useState<RetiroCaja[]>([]);
+  const [cierres, setCierres] = useState<CierreCaja[]>([]);
   const [loadingProductos, setLoadingProductos] = useState(true);
 
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
@@ -163,7 +174,7 @@ export function TiendaProvider({ children }: { children: React.ReactNode }) {
       setLoadingProductos(false);
     });
 
-    const unsubVentas = onSnapshot(query(collection(db, 'ventas'), orderBy('fecha', 'desc'), limit(100)), (snapshot) => {
+    const unsubVentas = onSnapshot(query(collection(db, 'ventas'), orderBy('fecha', 'desc')), (snapshot) => {
       setVentas(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Venta[]);
     });
 
@@ -177,8 +188,28 @@ export function TiendaProvider({ children }: { children: React.ReactNode }) {
       setGastos(docs);
     });
 
+    const unsubRetiros = onSnapshot(collection(db, 'retiros'), (snapshot) => {
+      const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as RetiroCaja[];
+      docs.sort((a, b) => {
+        const fechaA = a.fecha ? new Date(a.fecha).getTime() : 0;
+        const fechaB = b.fecha ? new Date(b.fecha).getTime() : 0;
+        return fechaB - fechaA;
+      });
+      setRetiros(docs);
+    });
+
+    const unsubCierres = onSnapshot(collection(db, 'cierres'), (snapshot) => {
+      const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as CierreCaja[];
+      docs.sort((a, b) => {
+        const fechaA = a.semanaInicio ? new Date(a.semanaInicio).getTime() : 0;
+        const fechaB = b.semanaInicio ? new Date(b.semanaInicio).getTime() : 0;
+        return fechaB - fechaA;
+      });
+      setCierres(docs);
+    });
+
     return () => {
-      unsubProductos(); unsubVentas(); unsubGastos();
+      unsubProductos(); unsubVentas(); unsubGastos(); unsubRetiros(); unsubCierres();
     };
   }, [user]);
 
@@ -321,6 +352,22 @@ export function TiendaProvider({ children }: { children: React.ReactNode }) {
         }
       }
     });
+  };
+
+  // 4.1 Funciones Caja: Retiros y Cierres
+  const registrarRetiro = async (retiro: Omit<RetiroCaja, 'id' | 'fecha'>) => {
+    await addDoc(collection(db, 'retiros'), {
+      ...retiro,
+      fecha: new Date().toISOString(),
+    });
+  };
+
+  const eliminarRetiro = async (id: string) => {
+    await deleteDoc(doc(db, 'retiros', id));
+  };
+
+  const guardarCierre = async (cierre: Omit<CierreCaja, 'id'>) => {
+    await setDoc(doc(db, 'cierres', cierre.semanaInicio), cierre);
   };
 
   // 5. Funciones CRUD Usuarios (requieren Admin SDK via API routes)
@@ -466,6 +513,7 @@ export function TiendaProvider({ children }: { children: React.ReactNode }) {
       productos, loadingProductos,
       agregarProducto, actualizarProducto, eliminarProducto,
       ventas, gastos, registrarVenta, registrarGasto, anularVenta,
+      retiros, cierres, registrarRetiro, eliminarRetiro, guardarCierre,
       usuarios, loadingUsuarios,
       crearUsuario, editarUsuario: editarUsuarioFn, cambiarContrasena: cambiarContrasenaFn, alternarBloqueoUsuario, actualizarRolUsuario, eliminarUsuario: eliminarUsuarioFn,
       tasaBCV, fechaTasaBCV, loadingTasa

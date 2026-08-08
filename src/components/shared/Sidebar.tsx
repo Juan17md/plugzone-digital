@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, PackageSearch, CircleDollarSign, History, Users, LogOut, Sun, Moon } from 'lucide-react';
+import { LayoutDashboard, PackageSearch, CircleDollarSign, History, Users, LogOut, Sun, Moon, Wallet } from 'lucide-react';
 import { getAuth, signOut } from 'firebase/auth';
 import { app } from '@/services/firebase';
 import { useTheme } from '@/components/providers/ThemeProvider';
@@ -11,6 +11,7 @@ import { useTienda } from '@/context/TiendaContext';
 const navItems = [
   { href: '/dashboard', label: 'Inicio', icon: LayoutDashboard },
   { href: '/inventario', label: 'Inventario', icon: PackageSearch },
+  { href: '/caja', label: 'Caja', icon: Wallet },
   { href: '/finanzas', label: 'Finanzas', icon: CircleDollarSign },
   { href: '/historial', label: 'Historial', icon: History },
 ];

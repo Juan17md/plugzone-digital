@@ -1,6 +1,7 @@
 import ExcelJS from 'exceljs';
-import { Producto, Venta, GastoOperativo, esVentaMultiProducto } from '@/types';
+import { Producto, Venta, GastoOperativo, CierreCaja, esVentaMultiProducto } from '@/types';
 import { obtenerDescripcionGasto } from '@/utils/gastos';
+import { METODOS_PAGO } from '@/utils/caja';
 
 /**
  * Función auxiliar para formatear fechas de manera legible en Excel
@@ -565,6 +566,85 @@ export const exportarReporteFinancieroExcel = async (
     r.getCell('montoUSD').numFmt = '"$"#,##0.00';
   });
   aplicarEstilosFilas(wsGastos);
+
+  await descargarArchivo(workbook, nombreArchivo);
+};
+
+// ==========================================
+// EXPORTACIÓN DE CIERRE DE CAJA SEMANAL
+// ==========================================
+export const exportarCierreExcel = async (
+  cierre: CierreCaja,
+  tasaBCV: number | null = 1,
+  nombreArchivo: string = 'Cierre_Caja_PlugZone'
+) => {
+  const tasa = tasaBCV ?? 1;
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'PlugZone Digital';
+  workbook.created = new Date();
+
+  const ws = workbook.addWorksheet('Cierre de Caja');
+
+  ws.columns = [
+    { header: 'Método de Pago', key: 'metodo', width: 24 },
+    { header: 'Ventas ($)', key: 'ventasUSD', width: 16 },
+    { header: 'Ventas (Bs)', key: 'ventasBS', width: 18 },
+    { header: 'Retiros ($)', key: 'retirosUSD', width: 16 },
+    { header: 'Saldo Esperado ($)', key: 'saldoUSD', width: 20 },
+    { header: 'Contado Real ($)', key: 'arqueoUSD', width: 18 },
+    { header: 'Diferencia ($)', key: 'diferenciaUSD', width: 18 },
+  ];
+
+  aplicarEstilosEncabezado(ws);
+
+  METODOS_PAGO.forEach(({ value, label }) => {
+    const ventas = cierre.montosVentas?.[value] ?? 0;
+    const retiros = cierre.montosRetiros?.[value] ?? 0;
+    const saldo = cierre.saldoEsperado?.[value] ?? 0;
+    const arqueo = cierre.arqueoReal?.[value] ?? 0;
+    const diferencia = cierre.diferencia?.[value] ?? 0;
+    if (ventas === 0 && retiros === 0 && arqueo === 0) return;
+
+    const row = ws.addRow({
+      metodo: label,
+      ventasUSD: ventas,
+      ventasBS: ventas * tasa,
+      retirosUSD: retiros,
+      saldoUSD: saldo,
+      arqueoUSD: arqueo,
+      diferenciaUSD: diferencia,
+    });
+
+    row.getCell('ventasUSD').numFmt = '"$"#,##0.00';
+    row.getCell('ventasBS').numFmt = '"Bs. "#,##0.00';
+    row.getCell('retirosUSD').numFmt = '"$"#,##0.00';
+    row.getCell('saldoUSD').numFmt = '"$"#,##0.00';
+    row.getCell('arqueoUSD').numFmt = '"$"#,##0.00';
+    row.getCell('diferenciaUSD').numFmt = '"$"#,##0.00';
+    row.getCell('metodo').alignment = { horizontal: 'left', vertical: 'middle' };
+  });
+
+  aplicarEstilosFilas(ws);
+
+  // Fila de Totales
+  const totalRow = ws.addRow({
+    metodo: 'TOTALES',
+    ventasUSD: cierre.totalVentas ?? 0,
+    ventasBS: (cierre.totalVentas ?? 0) * tasa,
+    retirosUSD: cierre.totalRetiros ?? 0,
+    saldoUSD: cierre.totalEsperado ?? 0,
+    arqueoUSD: cierre.totalArqueo ?? 0,
+    diferenciaUSD: cierre.totalDiferencia ?? 0,
+  });
+
+  totalRow.getCell('ventasUSD').numFmt = '"$"#,##0.00';
+  totalRow.getCell('ventasBS').numFmt = '"Bs. "#,##0.00';
+  totalRow.getCell('retirosUSD').numFmt = '"$"#,##0.00';
+  totalRow.getCell('saldoUSD').numFmt = '"$"#,##0.00';
+  totalRow.getCell('arqueoUSD').numFmt = '"$"#,##0.00';
+  totalRow.getCell('diferenciaUSD').numFmt = '"$"#,##0.00';
+
+  aplicarFilaTotales(totalRow);
 
   await descargarArchivo(workbook, nombreArchivo);
 };

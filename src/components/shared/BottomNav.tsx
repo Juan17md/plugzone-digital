@@ -2,12 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, PackageSearch, CircleDollarSign, History, Users } from 'lucide-react';
+import { LayoutDashboard, PackageSearch, CircleDollarSign, History, Users, Wallet } from 'lucide-react';
 import { useTienda } from '@/context/TiendaContext';
 
 const navItems = [
   { href: '/dashboard', label: 'Inicio', icon: LayoutDashboard },
   { href: '/inventario', label: 'Stock', icon: PackageSearch },
+  { href: '/caja', label: 'Caja', icon: Wallet },
   { href: '/finanzas', label: 'Finanzas', icon: CircleDollarSign },
   { href: '/historial', label: 'Historial', icon: History },
 ];

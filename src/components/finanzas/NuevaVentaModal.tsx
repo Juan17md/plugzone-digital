@@ -255,6 +255,7 @@ export default function NuevaVentaModal({ isOpen, onClose, onNotify }: Props) {
                     { value: 'Transferencia', label: 'Transferencia Bancaria' },
                     { value: 'Zelle', label: 'Zelle' },
                     { value: 'Tarjeta', label: 'Tarjeta de Débito' },
+                    { value: 'Binance', label: 'Binance (USDT)' },
                   ]}
                   accentColor="emerald"
                 />
