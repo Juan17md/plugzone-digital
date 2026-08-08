@@ -34,10 +34,15 @@ export function serializarValor(valor: unknown): unknown {
   return valor;
 }
 
+// Las variables de entorno pueden llegar con comillas envolventes (al copiarlas
+// desde .env.local al dashboard de Vercel), lo que rompe la autenticación OAuth.
+const limpiarVariable = (valor: string | undefined): string | undefined =>
+  valor?.trim().replace(/^"|"$/g, '');
+
 function crearClienteDrive(): Auth.OAuth2Client | null {
-  const clientId = process.env.GOOGLE_DRIVE_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_DRIVE_CLIENT_SECRET;
-  const refreshToken = process.env.GOOGLE_DRIVE_REFRESH_TOKEN;
+  const clientId = limpiarVariable(process.env.GOOGLE_DRIVE_CLIENT_ID);
+  const clientSecret = limpiarVariable(process.env.GOOGLE_DRIVE_CLIENT_SECRET);
+  const refreshToken = limpiarVariable(process.env.GOOGLE_DRIVE_REFRESH_TOKEN);
 
   if (!clientId || !clientSecret || !refreshToken) {
     return null;
