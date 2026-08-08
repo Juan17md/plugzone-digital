@@ -109,8 +109,10 @@ export async function GET(req: NextRequest) {
       { ok: true, mensaje: 'Endpoint de backup activo', ruta: 'POST /api/backup', colecciones: COLECCIONES, carpetaDrive: CARPETA_BACKUPS, retencion: `${MAXIMO_BACKUPS} backups` },
       { status: 200 }
     );
-  } catch {
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 });
+  } catch (error) {
+    console.error('Error en GET /api/backup:', error);
+    const mensaje = error instanceof Error ? error.message : 'Error interno';
+    return NextResponse.json({ error: mensaje }, { status: 500 });
   }
 }
 
