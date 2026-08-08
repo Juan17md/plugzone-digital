@@ -15,7 +15,7 @@ export interface Producto {
   almacenamiento?: string; // Almacenamiento interno (opcional para teléfonos)
 }
 
-export type MetodoPago = 'Efectivo' | 'Pago Móvil' | 'Transferencia' | 'Tarjeta' | 'Punto' | 'Zelle' | 'Binance';
+export type MetodoPago = 'Efectivo' | 'Pago Móvil' | 'Transferencia' | 'Punto' | 'Zelle' | 'Binance';
 
 // Representa cada artículo dentro de una venta multi-producto
 export interface ItemVenta {

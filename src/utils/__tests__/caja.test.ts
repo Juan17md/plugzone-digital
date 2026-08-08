@@ -36,13 +36,12 @@ const retiro = (id: string, fecha: Date, metodoPago: MetodoPago, monto: number):
 });
 
 describe('Métodos de pago', () => {
-  it('registra los 7 métodos incluyendo Binance', () => {
+  it('registra los 6 métodos incluyendo Binance', () => {
     expect(METODOS_PAGO.map(m => m.value)).toEqual([
       'Efectivo',
       'Pago Móvil',
       'Transferencia',
       'Binance',
-      'Tarjeta',
       'Punto',
       'Zelle',
     ]);

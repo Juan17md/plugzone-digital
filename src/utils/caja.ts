@@ -5,7 +5,6 @@ export const METODOS_PAGO: { value: MetodoPago; label: string }[] = [
   { value: 'Pago Móvil', label: 'Pago Móvil' },
   { value: 'Transferencia', label: 'Transferencia Bancaria' },
   { value: 'Binance', label: 'Binance (USDT)' },
-  { value: 'Tarjeta', label: 'Tarjeta' },
   { value: 'Punto', label: 'Punto de Venta' },
   { value: 'Zelle', label: 'Zelle' },
 ];
@@ -14,7 +13,6 @@ export const METODO_COLORS: Record<MetodoPago, string> = {
   Efectivo: '#10B981',
   'Pago Móvil': '#00F2FE',
   Transferencia: '#FF9F43',
-  Tarjeta: '#8B5CF6',
   Punto: '#F472B6',
   Zelle: '#6366F1',
   Binance: '#F0B90B',
