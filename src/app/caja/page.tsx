@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useTienda } from '@/context/TiendaContext';
-import { CierreCaja, RetiroCaja } from '@/types';
+import { CierreCaja, MetodoPago, RetiroCaja } from '@/types';
 import {
   Wallet, TrendingUp, TrendingDown, Plus, Trash2, ClipboardCheck,
   ChevronLeft, ChevronRight, ArrowDownRight, Minus, Receipt,
@@ -292,12 +292,14 @@ export default function CajaPage() {
       <div className="space-y-3">
         <h3 className="font-plus-jakarta font-bold text-lg text-polar-white">Saldo por Método de Pago</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-          {METODOS_PAGO.map(({ value, label }) => {
+          {(['Punto', 'Pago Móvil', 'Transferencia', 'Binance', 'Efectivo', 'Zelle'] as MetodoPago[]).map(metodo => {
+            const { value, label } = METODOS_PAGO.find(m => m.value === metodo) ?? { value: metodo, label: metodo };
             const ventasMetodo = resumen.ventas[value] ?? 0;
             const retirosMetodo = resumen.retiros[value] ?? 0;
             const gastosMetodo = resumen.gastos[value] ?? 0;
             const saldoMetodo = resumen.saldo[value] ?? 0;
             const sinMovimiento = ventasMetodo === 0 && retirosMetodo === 0 && gastosMetodo === 0;
+            const esMetodoBolivares = value === 'Pago Móvil' || value === 'Transferencia' || value === 'Punto';
             return (
               <div key={value} className={`glass-panel p-5 rounded-2xl transition-all duration-300 ${sinMovimiento ? 'opacity-60' : ''}`}>
                 <div className="flex items-center gap-2.5 mb-3">
@@ -307,6 +309,11 @@ export default function CajaPage() {
                 <p className="font-space-grotesk font-bold text-2xl text-polar-white mb-3">
                   ${saldoMetodo.toFixed(2)}
                 </p>
+                {esMetodoBolivares && tasaBCV && (
+                  <p className="font-space-grotesk font-bold text-lg text-muted-gray -mt-2 mb-3">
+                    Bs. {new Intl.NumberFormat('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(saldoMetodo * tasaBCV)}
+                  </p>
+                )}
                 <div className="flex flex-col gap-1 text-xs">
                   <span className="flex justify-between text-muted-gray">
                     <span className="flex items-center gap-1"><TrendingUp size={12} className="text-cashflow-emerald" /> Ventas</span>
