@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import * as Sentry from '@sentry/nextjs';
 import { Inter, Plus_Jakarta_Sans, Space_Grotesk } from 'next/font/google';
 import { RefreshCw, AlertTriangle } from 'lucide-react';
 
@@ -21,6 +22,7 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
+    Sentry.captureException(error);
     if (process.env.NODE_ENV === 'development') {
       console.error('[PlugZone Global Error]', error);
     }

@@ -12,6 +12,7 @@
     "test:todo": "firebase emulators:exec \"vitest run\" --only firestore"
   },
   "dependencies": {
+    "@sentry/nextjs": "^10.70.0",
     "exceljs": "^4.4.0",
     "firebase": "^12.13.0",
     "firebase-admin": "11.11.1",
