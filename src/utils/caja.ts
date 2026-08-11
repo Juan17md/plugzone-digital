@@ -72,6 +72,12 @@ export interface ResumenCajaSemana {
   totalSaldo: number;
 }
 
+export function calcularResumenCajaTotal(ventas: Venta[], retiros: RetiroCaja[], gastos: GastoOperativo[]): ResumenCajaSemana {
+  const inicio = new Date(0);
+  const fin = new Date(8640000000000000);
+  return calcularResumenCaja(ventas, retiros, gastos, inicio, fin);
+}
+
 export function calcularResumenCaja(ventas: Venta[], retiros: RetiroCaja[], gastos: GastoOperativo[], inicio: Date, fin: Date): ResumenCajaSemana {
   const ventasPorMetodo = agruparVentasPorMetodo(ventas, inicio, fin);
   const retirosPorMetodo = agruparRetirosPorMetodo(retiros, inicio, fin);

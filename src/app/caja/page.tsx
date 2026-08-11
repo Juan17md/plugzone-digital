@@ -8,7 +8,7 @@ import {
   ChevronLeft, ChevronRight, ArrowDownRight, Minus, Receipt,
 } from 'lucide-react';
 import { getInicioSemana, getSemanaAnterior, getSemanaSiguiente, formatearSemana, esSemanaActual } from '@/utils/fechas';
-import { METODOS_PAGO, METODO_COLORS, calcularResumenCaja, nombreMetodo } from '@/utils/caja';
+import { METODOS_PAGO, METODO_COLORS, calcularResumenCaja, calcularResumenCajaTotal, nombreMetodo } from '@/utils/caja';
 import BotonExportar from '@/components/shared/BotonExportar';
 import ModalRetiro from '@/components/caja/ModalRetiro';
 import ModalCierre from '@/components/caja/ModalCierre';
@@ -21,6 +21,7 @@ export default function CajaPage() {
   const { ventas, retiros, gastos, cierres, tasaBCV, eliminarRetiro } = useTienda();
 
   const [semanaSeleccionada, setSemanaSeleccionada] = useState(() => getInicioSemana(new Date()));
+  const [modoSaldo, setModoSaldo] = useState<'semanal' | 'total'>('semanal');
   const [modalRetiroOpen, setModalRetiroOpen] = useState(false);
   const [modalCierreOpen, setModalCierreOpen] = useState(false);
   const [cierreSeleccionado, setCierreSeleccionado] = useState<CierreCaja | null>(null);
@@ -47,6 +48,13 @@ export default function CajaPage() {
     finSemana.setDate(finSemana.getDate() + 7);
     return calcularResumenCaja(ventas, retiros, gastos, inicioSemana, finSemana);
   }, [ventas, retiros, gastos, inicioSemana]);
+
+  const resumenTotal = useMemo(
+    () => calcularResumenCajaTotal(ventas, retiros, gastos),
+    [ventas, retiros, gastos]
+  );
+
+  const resumenVisible = modoSaldo === 'total' ? resumenTotal : resumen;
 
   const cierreDeSemana = useMemo(
     () => cierres.find(c => c.semanaInicio === claveSemana) ?? null,
@@ -290,14 +298,38 @@ export default function CajaPage() {
 
       {/* Tarjetas por Método de Pago */}
       <div className="space-y-3">
-        <h3 className="font-plus-jakarta font-bold text-lg text-polar-white">Saldo por Método de Pago</h3>
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="font-plus-jakarta font-bold text-lg text-polar-white">Saldo por Método de Pago</h3>
+          <div className="p-1 glass-panel rounded-xl flex shrink-0">
+            <button
+              onClick={() => setModoSaldo('total')}
+              className={`px-4 sm:px-5 py-2 rounded-lg text-sm font-bold transition-all duration-300 ${
+                modoSaldo === 'total'
+                  ? 'bg-electric-cyan text-white shadow-md shadow-electric-cyan/20'
+                  : 'text-muted-gray hover:text-polar-white hover:bg-white/5'
+              }`}
+            >
+              Total
+            </button>
+            <button
+              onClick={() => setModoSaldo('semanal')}
+              className={`px-4 sm:px-5 py-2 rounded-lg text-sm font-bold transition-all duration-300 ${
+                modoSaldo === 'semanal'
+                  ? 'bg-electric-cyan text-white shadow-md shadow-electric-cyan/20'
+                  : 'text-muted-gray hover:text-polar-white hover:bg-white/5'
+              }`}
+            >
+              Semanal
+            </button>
+          </div>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
           {(['Punto', 'Pago Móvil', 'Transferencia', 'Binance', 'Efectivo', 'Zelle'] as MetodoPago[]).map(metodo => {
             const { value, label } = METODOS_PAGO.find(m => m.value === metodo) ?? { value: metodo, label: metodo };
-            const ventasMetodo = resumen.ventas[value] ?? 0;
-            const retirosMetodo = resumen.retiros[value] ?? 0;
-            const gastosMetodo = resumen.gastos[value] ?? 0;
-            const saldoMetodo = resumen.saldo[value] ?? 0;
+            const ventasMetodo = resumenVisible.ventas[value] ?? 0;
+            const retirosMetodo = resumenVisible.retiros[value] ?? 0;
+            const gastosMetodo = resumenVisible.gastos[value] ?? 0;
+            const saldoMetodo = resumenVisible.saldo[value] ?? 0;
             const sinMovimiento = ventasMetodo === 0 && retirosMetodo === 0 && gastosMetodo === 0;
             const esMetodoBolivares = value === 'Pago Móvil' || value === 'Transferencia' || value === 'Punto';
             return (
