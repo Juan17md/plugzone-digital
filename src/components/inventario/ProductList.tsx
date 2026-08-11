@@ -1,7 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import { Producto } from '@/types';
-import { PackageOpen, Edit3, Smartphone, Headphones, Zap, Shield, Trash2 } from 'lucide-react';
+import { PackageOpen, Edit3, Smartphone, Headphones, Zap, Shield, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface Props {
   productos: Producto[];
@@ -9,6 +10,8 @@ interface Props {
   onEdit: (producto: Producto) => void;
   onDelete: (producto: Producto) => void;
 }
+
+const ITEMS_POR_PAGINA = 20;
 
 type EstadoStock = 'agotado' | 'critico' | 'disponible';
 
@@ -37,6 +40,14 @@ const BADGES_ESTADO: Record<EstadoStock, { label: string; clase: string; texto: 
 };
 
 export default function ProductList({ productos, loading, onEdit, onDelete }: Props) {
+  const [paginaActual, setPaginaActual] = useState(1);
+
+  const totalPaginas = Math.max(1, Math.ceil(productos.length / ITEMS_POR_PAGINA));
+  const paginaSegura = Math.min(paginaActual, totalPaginas);
+
+  const inicio = (paginaSegura - 1) * ITEMS_POR_PAGINA;
+  const productosPaginados = productos.slice(inicio, inicio + ITEMS_POR_PAGINA);
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-muted-gray animate-pulse">
@@ -72,7 +83,7 @@ export default function ProductList({ productos, loading, onEdit, onDelete }: Pr
     <>
       {/* VISTA MÓVIL (Tarjetas) */}
       <div className="flex flex-col gap-3 md:hidden">
-        {productos.map(p => (
+        {productosPaginados.map(p => (
           <div key={p.id} className="glass-panel p-3.5 sm:p-4 rounded-xl flex flex-col gap-2.5 sm:gap-3">
             <div className="flex justify-between items-start gap-2">
               <div className="flex gap-3 min-w-0">
@@ -142,7 +153,7 @@ export default function ProductList({ productos, loading, onEdit, onDelete }: Pr
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {productos.map(p => (
+              {productosPaginados.map(p => (
                 <tr key={p.id} className="hover:bg-white/5 transition-colors">
                   <td className="p-4">
                     <span className="font-space-grotesk text-xs text-muted-gray bg-white/5 border border-white/10 px-2 py-0.5 rounded-md">
@@ -203,6 +214,51 @@ export default function ProductList({ productos, loading, onEdit, onDelete }: Pr
           </table>
         </div>
       </div>
+
+      {/* Paginación */}
+      {totalPaginas > 1 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4 px-1">
+          <p className="text-xs text-muted-gray order-2 sm:order-1">
+            Mostrando <span className="font-bold text-polar-white">{inicio + 1}</span>–<span className="font-bold text-polar-white">{Math.min(inicio + ITEMS_POR_PAGINA, productos.length)}</span> de <span className="font-bold text-polar-white">{productos.length}</span> productos
+          </p>
+
+          <div className="flex items-center gap-1.5 order-1 sm:order-2">
+            <button
+              onClick={() => setPaginaActual(paginaSegura - 1)}
+              disabled={paginaSegura <= 1}
+              aria-label="Página anterior"
+              className="p-2 rounded-lg bg-white/5 border border-white/10 text-polar-white hover:bg-electric-cyan/20 hover:text-electric-cyan disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white/5 disabled:hover:text-polar-white transition-colors"
+            >
+              <ChevronLeft size={18} />
+            </button>
+
+            {Array.from({ length: totalPaginas }, (_, i) => i + 1).map(num => (
+              <button
+                key={num}
+                onClick={() => setPaginaActual(num)}
+                aria-label={`Página ${num}`}
+                aria-current={num === paginaSegura ? 'page' : undefined}
+                className={`min-w-[38px] h-[38px] px-2 rounded-lg text-sm font-bold transition-all ${
+                  num === paginaSegura
+                    ? 'bg-electric-cyan text-white shadow-md shadow-electric-cyan/20'
+                    : 'bg-white/5 border border-white/10 text-muted-gray hover:text-polar-white hover:bg-white/10'
+                }`}
+              >
+                {num}
+              </button>
+            ))}
+
+            <button
+              onClick={() => setPaginaActual(paginaSegura + 1)}
+              disabled={paginaSegura >= totalPaginas}
+              aria-label="Página siguiente"
+              className="p-2 rounded-lg bg-white/5 border border-white/10 text-polar-white hover:bg-electric-cyan/20 hover:text-electric-cyan disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white/5 disabled:hover:text-polar-white transition-colors"
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }

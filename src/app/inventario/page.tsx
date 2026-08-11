@@ -248,6 +248,7 @@ export default function InventarioPage() {
 
       {/* Lista / Tabla de Productos */}
       <ProductList 
+        key={`${activeTab}-${selectedCategoria}-${searchTerm}`}
         productos={productosFiltrados} 
         loading={loadingProductos} 
         onEdit={handleOpenEditar} 
