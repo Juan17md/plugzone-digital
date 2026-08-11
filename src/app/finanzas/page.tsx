@@ -7,7 +7,7 @@ import NuevaVentaModal from '@/components/finanzas/NuevaVentaModal';
 import NuevoGastoModal from '@/components/finanzas/NuevoGastoModal';
 import ChartsFinanzas from '@/components/finanzas/ChartsFinanzas';
 import { ShoppingCart, Receipt, TrendingUp, TrendingDown, DollarSign, ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
-import { getInicioSemana, getFinSemana, getSemanaAnterior, getSemanaSiguiente, formatearSemana, esSemanaActual } from '@/utils/fechas';
+import { getInicioSemana, getInicioSemanaMasAntigua, getFinSemana, getSemanaAnterior, getSemanaSiguiente, formatearSemana, esSemanaActual } from '@/utils/fechas';
 import BotonExportar from '@/components/shared/BotonExportar';
 import { exportarReporteFinancieroExcel } from '@/utils/exportExcel';
 import { exportarReporteFinancieroPdf } from '@/utils/exportPdf';
@@ -55,6 +55,18 @@ export default function FinanzasPage() {
 
     return { ingresosBrutos, gananciaNeta, totalGastos, balancePuro, ventasDeSemana, gastosDeSemana };
   }, [ventas, gastos, semanaSeleccionada]);
+
+  const inicioSemana = useMemo(() => getInicioSemana(semanaSeleccionada), [semanaSeleccionada]);
+
+  const inicioSemanaMasAntigua = useMemo(
+    () => getInicioSemanaMasAntigua([
+      ...ventas.map(v => v.fecha),
+      ...gastos.map(g => g.fecha),
+    ]),
+    [ventas, gastos]
+  );
+
+  const esInicioDelHistorial = inicioSemanaMasAntigua !== null && inicioSemana <= inicioSemanaMasAntigua;
 
   const noEsSemanaActual = !esSemanaActual(semanaSeleccionada);
 
@@ -135,7 +147,8 @@ export default function FinanzasPage() {
       <div className="flex items-center justify-between glass-panel px-4 py-3 rounded-xl">
         <button
           onClick={semanaAnterior}
-          className="p-2 rounded-lg hover:bg-white/5 text-muted-gray hover:text-polar-white transition-colors"
+          disabled={esInicioDelHistorial}
+          className="p-2 rounded-lg hover:bg-white/5 text-muted-gray hover:text-polar-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
           aria-label="Semana anterior"
         >
           <ChevronLeft size={20} />
@@ -144,6 +157,9 @@ export default function FinanzasPage() {
         <div className="flex flex-col items-center gap-1">
           {!noEsSemanaActual && (
             <span className="text-[10px] font-bold text-cashflow-emerald bg-cashflow-emerald/10 px-2 py-0.5 rounded-md tracking-wide">Semana Actual</span>
+          )}
+          {esInicioDelHistorial && (
+            <span className="text-[10px] font-bold text-muted-gray bg-white/5 border border-white/10 px-2 py-0.5 rounded-md tracking-wide">Inicio del historial</span>
           )}
           <span className="font-plus-jakarta font-bold text-base text-polar-white">{formatearSemana(semanaSeleccionada)}</span>
           {noEsSemanaActual && (

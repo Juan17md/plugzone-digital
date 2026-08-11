@@ -7,7 +7,7 @@ import {
   Wallet, TrendingUp, TrendingDown, Plus, Trash2, ClipboardCheck,
   ChevronLeft, ChevronRight, ArrowDownRight, Minus, Receipt,
 } from 'lucide-react';
-import { getInicioSemana, getSemanaAnterior, getSemanaSiguiente, formatearSemana, esSemanaActual } from '@/utils/fechas';
+import { getInicioSemana, getInicioSemanaMasAntigua, getSemanaAnterior, getSemanaSiguiente, formatearSemana, esSemanaActual } from '@/utils/fechas';
 import { METODOS_PAGO, METODO_COLORS, calcularResumenCaja, calcularResumenCajaTotal, nombreMetodo } from '@/utils/caja';
 import BotonExportar from '@/components/shared/BotonExportar';
 import ModalRetiro from '@/components/caja/ModalRetiro';
@@ -69,6 +69,18 @@ export default function CajaPage() {
       return fecha >= inicioSemana && fecha < fin;
     });
   }, [retiros, inicioSemana]);
+
+  const inicioSemanaMasAntigua = useMemo(
+    () => getInicioSemanaMasAntigua([
+      ...ventas.map(v => v.fecha),
+      ...retiros.map(r => r.fecha),
+      ...gastos.map(g => g.fecha),
+      ...cierres.map(c => c.semanaInicio),
+    ]),
+    [ventas, retiros, gastos, cierres]
+  );
+
+  const esInicioDelHistorial = inicioSemanaMasAntigua !== null && inicioSemana <= inicioSemanaMasAntigua;
 
   const noEsSemanaActual = !esSemanaActual(semanaSeleccionada);
 
@@ -165,7 +177,8 @@ export default function CajaPage() {
       <div className="flex items-center justify-between glass-panel px-4 py-3 rounded-xl">
         <button
           onClick={semanaAnterior}
-          className="p-2 rounded-lg hover:bg-white/5 text-muted-gray hover:text-polar-white transition-colors"
+          disabled={esInicioDelHistorial}
+          className="p-2 rounded-lg hover:bg-white/5 text-muted-gray hover:text-polar-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
           aria-label="Semana anterior"
         >
           <ChevronLeft size={20} />
@@ -174,6 +187,9 @@ export default function CajaPage() {
         <div className="flex flex-col items-center gap-1">
           {!noEsSemanaActual && (
             <span className="text-[10px] font-bold text-cashflow-emerald bg-cashflow-emerald/10 px-2 py-0.5 rounded-md tracking-wide">Semana Actual</span>
+          )}
+          {esInicioDelHistorial && (
+            <span className="text-[10px] font-bold text-muted-gray bg-white/5 border border-white/10 px-2 py-0.5 rounded-md tracking-wide">Inicio del historial</span>
           )}
           <span className="font-plus-jakarta font-bold text-base text-polar-white">{formatearSemana(semanaSeleccionada)}</span>
           {noEsSemanaActual && (

@@ -45,3 +45,15 @@ export function esSemanaActual(fecha: Date): boolean {
   const inicioFecha = getInicioSemana(fecha);
   return inicioActual.getTime() === inicioFecha.getTime();
 }
+
+export function getInicioSemanaMasAntigua(fechas: (string | undefined | null)[]): Date | null {
+  const timestamps = fechas
+    .filter((f): f is string => typeof f === 'string' && !Number.isNaN(new Date(f).getTime()))
+    .map(f => new Date(f).getTime());
+  if (timestamps.length === 0) return null;
+  return getInicioSemana(new Date(Math.min(...timestamps)));
+}
+
+export function esMismaSemana(a: Date, b: Date): boolean {
+  return getInicioSemana(a).getTime() === getInicioSemana(b).getTime();
+}
