@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useTienda } from '@/context/TiendaContext';
 import { Producto, CategoriaProducto } from '@/types';
 import ProductList from '@/components/inventario/ProductList';
 import ProductModal from '@/components/inventario/ProductModal';
-import { Plus, Search, Filter, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Plus, Search, Filter, AlertTriangle, CheckCircle2, Wallet, TrendingUp, BadgeDollarSign } from 'lucide-react';
 import Select from '@/components/shared/Select';
 import BotonExportar from '@/components/shared/BotonExportar';
 import { exportarProductosExcel } from '@/utils/exportExcel';
@@ -66,6 +66,13 @@ export default function InventarioPage() {
       setToastMessage({ title: 'Error al generar el archivo PDF', type: 'error' });
     }
   };
+
+  // Totales globales del inventario (todos los productos, sin filtros)
+  const totalesInventario = useMemo(() => {
+    const totalInvertido = productos.reduce((acc, p) => acc + p.costoCompra * p.stockActual, 0);
+    const totalGanancia = productos.reduce((acc, p) => acc + (p.precioVenta - p.costoCompra) * p.stockActual, 0);
+    return { totalInvertido, totalGanancia, total: totalInvertido + totalGanancia };
+  }, [productos]);
 
   // Filtrado optimizado con Tabs
   const productosFiltrados = productos.filter(p => {
@@ -139,6 +146,44 @@ export default function InventarioPage() {
             <span className="sm:hidden">Agregar</span>
           </button>
         </div>
+      </div>
+
+      {/* Resumen de Inventario (Totales Globales) */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-5">
+        
+        {/* Total Invertido */}
+        <div className="glass-panel p-5 md:p-6 rounded-2xl flex items-center justify-between hover:-translate-y-1 hover:shadow-xl hover:shadow-black/10 transition-all duration-300">
+          <div className="min-w-0">
+            <p className="text-xs sm:text-sm text-muted-gray font-medium">Total Invertido</p>
+            <h3 className="font-space-grotesk font-bold text-2xl sm:text-3xl text-electric-cyan mt-1 truncate">${totalesInventario.totalInvertido.toFixed(2)}</h3>
+          </div>
+          <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-electric-cyan/10 flex items-center justify-center text-electric-cyan shrink-0 ml-3">
+            <Wallet size={22} />
+          </div>
+        </div>
+
+        {/* Total de Ganancia */}
+        <div className="glass-panel p-5 md:p-6 rounded-2xl flex items-center justify-between hover:-translate-y-1 hover:shadow-xl hover:shadow-black/10 transition-all duration-300">
+          <div className="min-w-0">
+            <p className="text-xs sm:text-sm text-muted-gray font-medium">Total de Ganancia</p>
+            <h3 className="font-space-grotesk font-bold text-2xl sm:text-3xl text-cashflow-emerald mt-1 truncate">${totalesInventario.totalGanancia.toFixed(2)}</h3>
+          </div>
+          <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-cashflow-emerald/10 flex items-center justify-center text-cashflow-emerald shrink-0 ml-3">
+            <TrendingUp size={22} />
+          </div>
+        </div>
+
+        {/* Total Global */}
+        <div className="glass-panel p-5 md:p-6 rounded-2xl flex items-center justify-between hover:-translate-y-1 hover:shadow-xl hover:shadow-black/10 transition-all duration-300">
+          <div className="min-w-0">
+            <p className="text-xs sm:text-sm text-muted-gray font-medium">Total Global</p>
+            <h3 className="font-space-grotesk font-bold text-2xl sm:text-3xl text-polar-white mt-1 truncate">${totalesInventario.total.toFixed(2)}</h3>
+          </div>
+          <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-white/5 flex items-center justify-center text-polar-white shrink-0 ml-3">
+            <BadgeDollarSign size={22} />
+          </div>
+        </div>
+
       </div>
 
       {/* Tabs (Segmented Control) Premium */}
