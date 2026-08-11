@@ -437,7 +437,7 @@ export default function NuevaVentaModal({ isOpen, onClose, onNotify }: Props) {
                                 min="0"
                                 value={item.precioVentaFinal || ''}
                                 onChange={e => actualizarPrecio(item.productoId, e.target.value)}
-                                placeholder={`$${item.precioSugerido}`}
+                                placeholder={`$${item.precioSugerido.toFixed(2)}`}
                                 className="w-full bg-cosmic-midnight border border-white/10 rounded-md px-2.5 py-1.5 text-sm font-space-grotesk font-bold text-polar-white focus:outline-none focus:border-cashflow-emerald text-right"
                               />
                             </td>

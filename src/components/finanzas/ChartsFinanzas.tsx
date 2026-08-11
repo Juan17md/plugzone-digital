@@ -117,7 +117,7 @@ export default function ChartsFinanzas({ ventas, semanaInicio }: Props) {
               <BarChart data={diarias} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
                 <CartesianGrid stroke={gridStroke} vertical={false} />
                 <XAxis dataKey="dia" tick={{ fill: 'var(--color-muted-gray)', fontSize: 12 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: 'var(--color-muted-gray)', fontSize: 12 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: 'var(--color-muted-gray)', fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={(value) => `$${Number(value).toFixed(2)}`} />
                 <Tooltip
                   contentStyle={tooltipStyle}
                   labelStyle={{ color: 'var(--color-polar-white)' }}
