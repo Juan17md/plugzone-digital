@@ -39,9 +39,15 @@ export function serializarValor(valor: unknown): unknown {
 const limpiarVariable = (valor: string | undefined): string | undefined =>
   valor?.trim().replace(/^"|"$/g, '');
 
+// Client ID/secret compartido de rclone como fallback (mismo patrón que Muv).
+// El client propio de la app OAuth está en modo Testing y sus refresh tokens
+// expiran a los 7 días; el compartido de rclone está publicado y no expira.
+const CLIENT_ID_COMPARTIDO_RCLONE = '202264815644.apps.googleusercontent.com';
+const CLIENT_SECRET_COMPARTIDO_RCLONE = 'X4Z3ca8xfWDb1Voo-F9a7ZxJ';
+
 function crearClienteDrive(): Auth.OAuth2Client | null {
-  const clientId = limpiarVariable(process.env.GOOGLE_DRIVE_CLIENT_ID);
-  const clientSecret = limpiarVariable(process.env.GOOGLE_DRIVE_CLIENT_SECRET);
+  const clientId = limpiarVariable(process.env.GOOGLE_DRIVE_CLIENT_ID) || CLIENT_ID_COMPARTIDO_RCLONE;
+  const clientSecret = limpiarVariable(process.env.GOOGLE_DRIVE_CLIENT_SECRET) || CLIENT_SECRET_COMPARTIDO_RCLONE;
   const refreshToken = limpiarVariable(process.env.GOOGLE_DRIVE_REFRESH_TOKEN);
 
   if (!clientId || !clientSecret || !refreshToken) {
